@@ -2,7 +2,7 @@
 
 Analysis code for data taken with the wire detecotor.
 
-Meant to be a cleann rebuild of the "keysight-DMM...." repository.
+Meant to be a clean rebuild of the "keysight-DMM...." repository.
 
 Note the package is onyl locally installable. 
 
@@ -14,4 +14,4 @@ Install Instructions: Type the following into a console
 
 • use "pip install ." to install wire_analyis as a local package
 
-You can now import wire_analyis from anywhere on your system.
+You can now import wire_analysis from anywhere on your system.
