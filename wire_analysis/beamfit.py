@@ -7,6 +7,13 @@ from scipy.interpolate import interp1d
 
 import os
 
+#######Imports from  other submodules
+# Put  these into a  utils.py?
+from .flow_on_off_cycle_analysis import (load_dict, make_result_dict, 
+                                        sort_by_z_list)
+
+########
+
 #plot Options
 import matplotlib as mpl
 font = {#'family' : 'normal','weight' : 'bold',
@@ -249,19 +256,28 @@ if __name__ == "__main__":
     # Test using 1 sccm,  1500K
     # run_name = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
     # Make fit run dictionary
-    run_dict = {"base_dir" : 
-                ("C:/Users/Christian/Documents/StudiumPhD/python/"
-            + "Keysight-DMM-34461A/analysis/"),
-            }
+    # TODO Should this not rather be a class of its oown, so it can suggest its
+    #  options?
+    run_dict = {}
+    rd = run_dict
+    run_dict["base_dir"] =  ("C:/Users/Christian/Documents/StudiumPhD/python/"
+                            + "Keysight-DMM-34461A/analysis/")
     run_dict["plot_dir"] = (run_dict["base_dir"] + os.sep 
-            + "output/flow_on_off/")
+                            + "output/flow_on_off/")
     run_dict["sc_dir"] = (run_dict["base_dir"]
-         + os.sep + "../" 
-         + "SC_downloads/")
-    
+                            + os.sep + "../" 
+                            + "SC_downloads/")
+                        
     run_dict["run_name"] = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
     run_dict["data_name"] = run_dict["run_name"]
 
+
+    # requires flow_on_off_cycle_analysis_2
+    # Which in turn  requires others, so we need to update the entire 
+    # series to put them in the package
+
+    ext_dict = load_dict(rd["plot_dir"] + rd["run_name"] + os.sep 
+                            + "ext_dict")
 
     run_dict[""]
 
