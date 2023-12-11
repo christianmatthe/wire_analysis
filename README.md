@@ -12,6 +12,6 @@ Install Instructions: Type the following into a console
 
 • use "cd wire_analysis" to navigate to the wire_detector folder containing setup.py
 
-• use "pip install ." to install wire_analyis as a local package
+• use "pip install ." to install wire_analysis as a local package
 
 You can now import wire_analysis from anywhere on your system.
