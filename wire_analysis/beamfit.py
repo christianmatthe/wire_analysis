@@ -9,8 +9,10 @@ import os
 
 #######Imports from  other submodules
 # Put  these into a  utils.py?
-from .flow_on_off_cycle_analysis import (load_dict, make_result_dict, 
+# THis is currently a bad way to do it
+from flow_on_off_cycle_analysis import (load_dict, make_result_dict, 
                                         sort_by_z_list)
+import flow_on_off_cycle_analysis as flow_on_off_cycle_analysis_2
 
 ########
 
@@ -56,7 +58,7 @@ class Beamfit():
 
         #define constants
         degree = np.pi/180 # convert form rad to degree
-        
+        self.degree = degree
         # run init fucntions
         self.init_eta_wire_sim()
             #Allow for later adjustment of default eta 
@@ -175,31 +177,31 @@ class Beamfit():
     # Adapted from HABS_bpf_4.1.3_2023-11-22_dual_composition_fit.ipynb
     #"P_int_eta_laser"
     # #### Reimplemented below as a special case of the 2 component function
-    # def P_int(self,
-    #           z_pos, l_eff, theta_max, z0, A, P_0,
-    #           y0 = None, # Set to constant for simplicity 
-    #           eta = None
-    #                  ):
-    #     if eta is None:
-    #         eta = self.eta_wire_default
-    #     if y0 is None:
-    #         y0 = self.y0_default
+    def P_int(self,
+              z_pos, l_eff, theta_max, z0, A, P_0,
+              y0 = None, # Set to constant for simplicity 
+              eta = None
+                     ):
+        if eta is None:
+            eta = self.eta_wire_default
+        if y0 is None:
+            y0 = self.y0_default
 
-    #     # Edit of P_int_fast_array with selectabel eta
-    #     z_space = z_pos
-    #     result = np.zeros_like(z_space)
-    #     for i,z_pos in enumerate(z_space): 
-    #         def theta(lw):
-    #             return np.arctan(np.sqrt(lw ** 2 + (z_pos - z0) ** 2) / y0)
-    #         integrant = lambda lw: ((self.beam_profile(theta(lw), l_eff, 
-    #                                                    theta_max) 
-    #                                 * np.cos(theta(lw))**3) 
-    #                                 # Multiply by eta_wire
-    #                                 * eta(lw)
-    #                                         )   
-    #         result[i] = integrate.quad(integrant, -10, 10,
-    #                             epsabs=1e-1, epsrel=1e-1)[0]
-    #     return A * result + P_0
+        # Edit of P_int_fast_array with selectabel eta
+        z_space = z_pos
+        result = np.zeros_like(z_space)
+        for i,z_pos in enumerate(z_space): 
+            def theta(lw):
+                return np.arctan(np.sqrt(lw ** 2 + (z_pos - z0) ** 2) / y0)
+            integrant = lambda lw: ((self.beam_profile(theta(lw), l_eff, 
+                                                       theta_max) 
+                                    * np.cos(theta(lw))**3) 
+                                    # Multiply by eta_wire
+                                    * eta(lw)
+                                            )   
+            result[i] = integrate.quad(integrant, -10, 10,
+                                epsabs=1e-1, epsrel=1e-1)[0]
+        return A * result + P_0
     
 
     # define dual fit 
@@ -230,22 +232,160 @@ class Beamfit():
             result[i] = integrate.quad(integrant, -10, 10,
                                 epsabs=1e-1, epsrel=1e-1)[0]
         return result + P_0   
+    # Redefine P_int as special case of 2 component model
+    # TypeError: P_int_2_component() got multiple values for argument 'l_eff_2'
+    # def P_int(self,
+    #           z_pos, l_eff, theta_max, z0, A, P_0,
+    #           y0 = None, # Set to constant for simplicity 
+    #           eta = None
+    #                  ):
+    #     result = self.P_int_2_component(self,
+    #           z_pos, l_eff, theta_max, z0, A, P_0,
+    #           l_eff_2 = 10,A_2 = 0,
+    #           y0 = y0, # Set to constant for simplicity 
+    #           eta = eta)
+    #     return result
+    
 
-    def P_int(self,
-              z_pos, l_eff, theta_max, z0, A, P_0,
-              y0 = None, # Set to constant for simplicity 
-              eta = None
-                     ):
-        result = self.P_int_2_component(self,
-              z_pos, l_eff, theta_max, z0, A, P_0,
-              l_eff_2 = 0,A_2 = 0,
-              y0 = y0, # Set to constant for simplicity 
-              eta = eta)
-        return result
+    #################################################
+
+    #define plottign function:
+    # TODO Rework: its just a straight copy for now
+    def plot_fit(self,
+                 P_arr, P_arr_eye, P_err_arr, z_arr, z_space, P_space_eye, 
+              scale_residuals = False, 
+             plot_angles = False, z0 = 1.5, theta_max = 22.6, 
+             l_eff_str = None,
+             # Add possibility to compare to second fit
+             P_space_compare = None, P_compare_label = "P_compare",
+            # Name plot
+            plotname = "default",
+             ):
+        nParams = 5
+        dof = len(P_arr) - nParams
+        #chi2 = np.sum((P_arr - P_arr_eye)**2 / P_err_arr**2)
+        chi2_red = np.sum((P_arr - P_arr_eye)**2 / P_err_arr**2) / dof
+
+        fig = plt.figure(0, figsize=(8,6.5), dpi =300)
+        ax1=plt.gca()
+        gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[3, 1]) 
+        gs.update(#wspace=0.05
+                hspace = 0.005
+            )
+
+        ax1 = plt.subplot(gs[0])
+        ax2 = plt.subplot(gs[1])
 
 
-    ############################
-    # Plotting function
+        if plot_angles == True:
+            y0 = self.y0_default
+            x_label = r"central angle [deg]"
+            z_arr = np.arctan((z_arr - z0) / y0) / self.degree
+            z_space = np.arctan((z_space - z0) / y0) / self.degree
+            ax1.axvline(theta_max, label=r"$\theta_{max} = $"
+                        + f"{theta_max:.2f} [deg]", 
+                        color = "gray", alpha = 0.6, ls = "--")
+            ax2.axvline(theta_max, label=r"$\theta_{max}$", 
+                        color = "gray", alpha = 0.6, ls = "--")
+        else:
+            x_label = r"$z_{pos}$ [mm]"
+        ### ax1
+        ax1.errorbar(z_arr, P_arr,yerr = P_err_arr, fmt = ".",
+                    label = r"data, $\chi^2_{red}$"+" = {:2.3f} ".format(chi2_red))
+
+        # Plot Fit
+        #xdata=p_arr
+        if l_eff_str == None:
+            ax1.plot(z_space, P_space_eye, "r-", label = r"$P_{fit}$")
+        else:
+            ax1.plot(z_space, P_space_eye, "r-", label = r"$P_{fit}$" 
+                    + r", $l_{eff}=$" + l_eff_str
+            #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [$\Omega$/µW],
+            #  R$_0$={:5.3f} $\pm$ {:2.1e} [$\Omega$]'''.format(
+            #      popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
+            #           ))
+                    )
+        if P_space_compare is None:
+            pass
+        else:
+            ax1.plot(z_space, P_space_compare, "-",color = "C1", 
+                    label = P_compare_label
+                    )
+
+
+        ax1.set_ylabel(r"power [µW]")
+        ax1.set_xlabel(x_label)
+
+        ax1.grid(True)
+        ax1.legend(shadow=True, fontsize = 13)
+        # ax1.tight_layout()
+
+        #ax 2
+        if scale_residuals == False:
+            ax2.errorbar(z_arr, P_arr-P_arr_eye, yerr = P_err_arr, fmt= ".",
+                            label = "residuals")
+            # Plot Fit
+            #xdata=p_arr
+            ax2.plot(z_space, [0.0 for z in z_space] , 'r-',
+                #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW ],
+                #  R_0={:5.3f} $\pm$ {:2.1e} [Ohm]'''.format(
+                #      popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
+                #           ))
+                        )
+            ax2.set_ylabel(r"Residuals [µW]")
+        else:
+            ax2.errorbar(z_arr, (P_arr-P_arr_eye)/P_err_arr, 
+                        yerr = 1, fmt= ".",
+                            label = "residuals")
+            # Plot Fit
+            #xdata=p_arr
+            ax2.plot(z_space, [0.0 for z in z_space] , 'r-',
+                #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW ],
+                #  R_0={:5.3f} $\pm$ {:2.1e} [Ohm]'''.format(
+                #      popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
+                #           ))
+                        )
+            ax2.set_ylabel(r"Residuals [$\sigma$]")
+
+        ax2.set_xlabel(x_label)
+
+        ax2.grid(True)
+
+        #make custom pruning of uppper tick (do not plot ticks in upper 10%)
+        #so that ax2 tick does nto interfere with  ax1 tick
+        ax2.locator_params(axis="y", min_n_ticks = 3
+                            )
+        y_loc = ax2.yaxis.get_majorticklocs()
+        x_loc = ax1.xaxis.get_majorticklocs()
+        #print("y_loc: ", y_loc)
+        #print("y_loc[1:-2]: ", y_loc[1:-2])
+        #print("ylim: ", ax2.get_ylim())
+        y2_min, y2_max = ax2.get_ylim()
+        y_loc = [y for y in y_loc if y2_min < y < y2_max - (y2_max -
+                                                             y2_min)*0.1]
+        #print("y_loc: ", y_loc)
+        ax2.set_yticks(y_loc)
+        # set  x lims:
+        x1_min, x1_max = ax1.get_xlim()
+        ax2.set_xticks(x_loc)
+        ax2.set_xlim(ax1.get_xlim())
+
+        # Delete xticks on 1st axis
+        ax1.set_xticklabels([])
+
+
+        fig.tight_layout()
+        fig.subplots_adjust(left=0.2)
+
+        format_im = 'png' #'pdf' or png
+        dpi = 300
+        plt.savefig(plot_dir + plotname
+                    + '.{}'.format(format_im),
+                    format=format_im, dpi=dpi)
+        plt.show()
+        ax1.cla()
+        fig.clf()
+        plt.close()
 
 
 
@@ -256,28 +396,135 @@ if __name__ == "__main__":
     # Test using 1 sccm,  1500K
     # run_name = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
     # Make fit run dictionary
-    # TODO Should this not rather be a class of its oown, so it can suggest its
-    #  options?
-    run_dict = {}
-    rd = run_dict
-    run_dict["base_dir"] =  ("C:/Users/Christian/Documents/StudiumPhD/python/"
-                            + "Keysight-DMM-34461A/analysis/")
-    run_dict["plot_dir"] = (run_dict["base_dir"] + os.sep 
-                            + "output/flow_on_off/")
-    run_dict["sc_dir"] = (run_dict["base_dir"]
-                            + os.sep + "../" 
-                            + "SC_downloads/")
+    # # TODO Should this not rather be a class of its oown, so it can suggest its
+    # #  options?
+    # run_dict = {}
+    # rd = run_dict
+    # run_dict["base_dir"] =  ("C:/Users/Christian/Documents/StudiumPhD/python/"
+    #                         + "Keysight-DMM-34461A/analysis/")
+    # run_dict["plot_dir"] = (run_dict["base_dir"] + os.sep 
+    #                         + "output/flow_on_off/")
+    # run_dict["sc_dir"] = (run_dict["base_dir"]
+    #                         + os.sep + "../" 
+    #                         + "SC_downloads/")
                         
-    run_dict["run_name"] = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
-    run_dict["data_name"] = run_dict["run_name"]
+    # run_dict["run_name"] = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
+    # run_dict["data_name"] = run_dict["run_name"]
 
 
-    # requires flow_on_off_cycle_analysis_2
-    # Which in turn  requires others, so we need to update the entire 
-    # series to put them in the package
+    # # requires flow_on_off_cycle_analysis_2
+    # # Which in turn  requires others, so we need to update the entire 
+    # # series to put them in the package
 
-    ext_dict = load_dict(rd["plot_dir"] + rd["run_name"] + os.sep 
-                            + "ext_dict")
+    # ext_dict = load_dict(rd["plot_dir"] + rd["run_name"] + os.sep 
+    #                         + "ext_dict")
 
-    run_dict[""]
+    # run_dict[""]
 
+    ########################
+    # Direct copy code from 
+    # HABS_beam_profile_fitting_4.1.1.1_cos3_low_temp_1sccm.ipynb
+    # to test functionality
+
+    beamfit = Beamfit()
+
+    # Define locations:
+    base_dir  = ("C:/Users/Christian/Documents/StudiumPhD/python/"
+                + "Keysight-DMM-34461A/analysis/")
+    plot_dir = (base_dir + os.sep 
+                + "output/flow_on_off/")
+
+    sc_dir = (base_dir
+            + os.sep + "../" 
+            + "SC_downloads/")
+
+    run_name = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
+    data_name = run_name
+    #data2_name = run_name + "Wire2"
+
+    ext_dict = load_dict(plot_dir + run_name + os.sep 
+                                + "ext_dict")
+    result_dict_unsorted = make_result_dict(ext_dict)
+
+    #print(result_dict.items())
+
+    #TODO put z_list in results_dict iif applicable
+    z_list_unsorted = np.array( [-11, -6, -1.5,  1,  3.5,
+                        7, 12,  20,  -10, -5,
+                        -1, 1.5, 4, 8, 13, 
+                        18, -9, -4, -0.5, 2,
+                        4.5, 9, 14, 19, -8,
+                        -3, 0, 2.5, 5, 10,
+                        15, 17, -7, -2, 0.5,
+                        3, 6, 11, 16
+                        ])
+    # Sort these:
+    z_arr, result_dict = sort_by_z_list(z_list_unsorted, result_dict_unsorted)
+
+    P_arr = result_dict["p_arr"]
+    P_err_arr = result_dict["p_err_arr"]
+
+    #neglegt leading 3 points
+    P_arr = P_arr[3::]
+    P_err_arr = P_err_arr[3::]
+    z_arr = z_arr[3::]
+
+
+    # Starting Parameters
+    l_eff = 3.0
+    theta_max = 24.2 * beamfit.degree  # motivated loosely by HABS model, 
+                            # adjusted to fit
+    z0 = 1.51
+    rescale = 1.25
+    A = 0.02415  # motivated by fit
+    print("A_start:", A)
+
+    A_low = A * 0.3
+    A_high = A * 3
+
+
+    P_0 = -0.10 # motivated by fit
+
+    ##### All parameters except theta_max
+    P_int_fit = lambda z_space, l_eff, A , z0, P_0: beamfit.P_int(
+                    z_space, l_eff, theta_max, z0, A, P_0)
+
+    # Use errors as absolute to get proper error estimation
+    popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
+                        sigma = P_err_arr,
+                        absolute_sigma= False,
+                        p0 = [l_eff, A,  z0, P_0], 
+                        bounds=([2, A_low,  z0 - 1, P_0 - 0.1],
+                                [20,  A_high,  z0 + 1, P_0 + 0.1])
+                        )
+    ######
+
+    print(popt_abs, pcov_abs)
+    for i, p in enumerate(popt_abs):
+        print(f"parameter {i:.0f}: {p:.5f}"
+            +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
+
+    #### plot
+    z_space = np.linspace(-11,20,num=40)
+
+    P_space_eye= P_int_fit(z_space, *popt_abs)
+    P_arr_eye = P_int_fit(z_arr, *popt_abs)
+
+    # plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+    #      , z_space,P_space_eye)
+    # plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+    #      , z_space,P_space_eye, scale_residuals=True)
+
+    # Angle plot
+    plot_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
+            + "output/")
+    os.makedirs(plot_dir, exist_ok=True)
+
+
+
+    beamfit.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+         , z_space,P_space_eye, scale_residuals=True, 
+         plot_angles=True, z0=popt_abs[2], theta_max=theta_max/beamfit.degree,
+         l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
+                     + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
+                     plotname = "test")
