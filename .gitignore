@@ -1,0 +1,23 @@
+# plots
+*.pdf
+*.png
+*.gif
+*.mp4
+
+
+#stored objects
+*.pkl
+*.pickle
+*.zip
+*.7z
+
+#data
+*.csv
+*.txt
+*.json
+*.xlsx
+
+#vscode
+.vscode
+__pycache__
+*.code-workspace
