@@ -4,7 +4,7 @@ Analysis code for data taken with the wire detecotor.
 
 Meant to be a clean rebuild of the "keysight-DMM...." repository.
 
-Note the package is onyl locally installable. 
+Note the package is only locally installable. 
 
 Install Instructions: Type the following into a console
 
