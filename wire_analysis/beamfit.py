@@ -13,7 +13,7 @@ import json
 # THis is currently a bad way to do it
 from .flow_on_off_cycle_analysis import (load_dict, make_result_dict, 
                                         sort_by_z_list)
-#import flow_on_off_cycle_analysis as flow_on_off_cycle_analysis_2
+
 
 ########
 
@@ -275,9 +275,67 @@ class Beamfit():
         # Just for testing
         # rd["ext_dict_name"] = (rd["plot_dir"] + rd["run_name"] + os.sep 
         #                     + "ext_dict")
-        ext_dict = load_dict(rd["ext_dict_name"])
 
-        result_dict_unsorted = make_result_dict(ext_dict)
+        # Code below causes issues when loading old .pkl which expect to find
+        # module "flow_on_off_cycle_analysis_2"
+        # Note ext_dict is a misnomer annd actually a commplex .pkl object
+        # rather than a dict
+        # Mitigated by simply starting from the finished results_dict
+        # "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire" as example
+
+        ###########################
+        # ext_dict = load_dict(rd["ext_dict_name"])
+
+        # result_dict_unsorted = make_result_dict(ext_dict)
+        ######################################
+
+        result_dict_unsorted ={
+        'µW_per_ohm': np.array([
+            6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
+            6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
+            6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
+            6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
+            6400., 6400., 6400.]), 
+        'v_mean_arr': np.array([
+            -6.27279427e-06,  2.55525178e-05,  3.96072709e-05,  4.57582334e-05,
+            4.32056391e-05,  3.26924499e-05,  1.85872156e-05, -1.21510254e-05,
+            2.63207578e-07,  2.74459520e-05,  3.96955313e-05,  4.54040753e-05,
+            3.89842708e-05,  2.64444845e-05,  1.65740388e-05, -1.34799988e-05,
+            1.25020691e-05,  3.02912127e-05,  3.81763532e-05,  3.96946576e-05,
+            3.45319325e-05,  2.44688085e-05,  1.46194838e-05, -1.40362281e-05,
+            1.76820251e-05,  3.09132803e-05,  3.91618281e-05,  4.29136770e-05,
+            3.55290311e-05,  2.21206381e-05,  8.46465544e-06, -6.39917090e-06,
+            2.04199024e-05,  3.31100794e-05,  4.20899083e-05,  3.85805948e-05,
+            3.31826902e-05,  1.88283577e-05,  1.50565149e-06]),
+        'v_err_arr': np.array([
+            3.02529329e-06, 5.72563122e-07, 3.82400676e-07, 1.49048688e-06,
+            3.12795445e-06, 3.77510309e-07, 2.71503146e-06, 2.65761113e-06,
+            3.22700593e-07, 1.52502856e-06, 4.96211680e-07, 3.97699863e-07,
+            6.28612322e-06, 1.15698143e-05, 6.77812478e-06, 9.71844756e-06,
+            2.04565200e-06, 2.93048324e-06, 3.32563259e-06, 3.42367704e-06,
+            2.06030150e-06, 1.88978687e-06, 3.70976116e-06, 3.25333156e-06,
+            1.86716072e-06, 2.81329803e-06, 8.96132272e-07, 4.86207986e-06,
+            8.97542399e-07, 7.88947075e-07, 3.86361480e-06, 2.69329214e-06,
+            1.16845657e-06, 3.13262499e-06, 4.71695614e-06, 8.13435691e-07,
+            7.13470087e-06, 3.73952906e-06, 7.91830370e-07]), 
+        'p_arr': np.array([
+            -0.04014588,  0.16353611,  0.25348653,  0.29285269,  0.27651609,
+            0.20923168,  0.11895818, -0.07776656,  0.00168453,  0.17565409,
+            0.2540514 ,  0.29058608,  0.24949933,  0.1692447 ,  0.10607385,
+            -0.08627199,  0.08001324,  0.19386376,  0.24432866,  0.25404581,
+            0.22100437,  0.15660037,  0.0935647 , -0.08983186,  0.11316496,
+            0.19784499,  0.2506357 ,  0.27464753,  0.2273858 ,  0.14157208,
+            0.05417379, -0.04095469,  0.13068738,  0.21190451,  0.26937541,
+            0.24691581,  0.21236922,  0.12050149,  0.00963617]),
+        'p_err_arr': np.array([
+            0.01936188, 0.0036644 , 0.00244736, 0.00953912, 0.02001891,
+            0.00241607, 0.0173762 , 0.01700871, 0.00206528, 0.00976018,
+            0.00317575, 0.00254528, 0.04023119, 0.07404681, 0.04338   ,
+            0.06219806, 0.01309217, 0.01875509, 0.02128405, 0.02191153,
+            0.01318593, 0.01209464, 0.02374247, 0.02082132, 0.01194983,
+            0.01800511, 0.00573525, 0.03111731, 0.00574427, 0.00504926,
+            0.02472713, 0.01723707, 0.00747812, 0.0200488 , 0.03018852,
+            0.00520599, 0.04566209, 0.02393299, 0.00506771])}
 
         z_array_unsorted = np.array(rd["z_list_unsorted"])
 
@@ -296,7 +354,7 @@ class Beamfit():
 
         # rd["fit_start"] = {
         #     "l_eff" : 3.0,
-        #     "theta_max" : 24.2 * beamfit.degree,
+        #     "theta_max" : 24.2 * self.degree,
         #     "z0" : 1.51,
         #     "A" : 0.02415, # motivated by fit
         #     "P_0" : -0.10 # motivated by fit
@@ -311,7 +369,7 @@ class Beamfit():
         P_0 = rd["fit_start"]["P_0"]
         A_bound = rd["fit_start"]["A_bound"]
         # ##### All parameters except theta_max
-        P_int_fit = lambda z_space, l_eff, A , z0, P_0: beamfit.P_int(
+        P_int_fit = lambda z_space, l_eff, A , z0, P_0: self.P_int(
                         z_space, l_eff, theta_max, z0, A, P_0)
 
         # Use errors as absolute to get proper error estimation
@@ -339,10 +397,10 @@ class Beamfit():
         plot_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
                 + "output/")
         os.makedirs(plot_dir, exist_ok=True)
-        beamfit.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+        self.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
             , z_space,P_space_eye, scale_residuals=True, 
             plot_angles=True, z0=popt_abs[2],
-            theta_max=theta_max/beamfit.degree,
+            theta_max=theta_max/self.degree,
             l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
                      + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
                      plotname = "test_" + rd["run_name"])
