@@ -15,9 +15,11 @@ from numpy.linalg import inv
 import json
 
 # import functions from other file
-import Voltage_base_analysis as vba
-import calib_analysis as ca
-import pressure_analysis as pa
+# import Voltage_base_analysis as vba
+# import calib_analysis as ca
+# import pressure_analysis as pa
+
+from .Voltage_base_analysis import (load_data, save_data, select_date_indices)
 
 #plot Options
 import matplotlib as mpl
@@ -619,7 +621,7 @@ Parameters
                 + "Do you want to load it? (type 'y')")
             if s == "y":
                 print(f"loading {dataname}")
-                self.data_dict = vba.load_data(dataname)
+                self.data_dict = load_data(dataname)
                 return
         
         print(f"denoising into file {dataname}")
@@ -660,7 +662,7 @@ Parameters
 
         # bodge: save data dict
         # denoising should probably be a separate step outside th extractor?
-        vba.save_data(dataname, self.data_dict)
+        save_data(dataname, self.data_dict)
 
 
 
@@ -682,7 +684,7 @@ Parameters
                 interval_end = interval_start + self.time_interval
             else:
                 interval_end = self.end_date
-            start,end = vba.select_date_indices(self.data_dict,
+            start,end = select_date_indices(self.data_dict,
                                                 interval_start,
                                                 interval_end)
             v_series = self.data_dict["voltage"][start:end] 
@@ -719,7 +721,7 @@ Parameters
         """
         interval_start = slice["dates"][0] + front_crop
         interval_end = slice["dates"][-1] - rear_crop
-        start,end = vba.select_date_indices(slice,
+        start,end = select_date_indices(slice,
                                                 interval_start,
                                                 interval_end)
         v_series = slice["voltage"][start:end] 
@@ -2103,10 +2105,10 @@ def extract(sc_dir, HABS_dir, run_name, data_name,
                 ):
         #### HACK START Comment oot to laod instead of calculating
         #load wire data
-        vba.prep_data_slowdash("../SC_downloads/Wire/"+ data_name + ".json"
+        prep_data_slowdash("../SC_downloads/Wire/"+ data_name + ".json"
                         , run_name
                         )
-        data_dict = vba.load_data(data_name)
+        data_dict = load_data(data_name)
 
         # extraction dict:
         ext_dict = {}

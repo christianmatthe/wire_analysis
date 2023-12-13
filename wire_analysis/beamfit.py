@@ -11,9 +11,9 @@ import json
 #######Imports from  other submodules
 # Put  these into a  utils.py?
 # THis is currently a bad way to do it
-from flow_on_off_cycle_analysis import (load_dict, make_result_dict, 
+from .flow_on_off_cycle_analysis import (load_dict, make_result_dict, 
                                         sort_by_z_list)
-import flow_on_off_cycle_analysis as flow_on_off_cycle_analysis_2
+#import flow_on_off_cycle_analysis as flow_on_off_cycle_analysis_2
 
 ########
 
@@ -51,7 +51,9 @@ class Beamfit():
     """
     def __init__(self,
                 y0_default = 35.17, # mm (estimated from CAD),
-                run_dict_path = (".\\wire_analysis\\output\\test.json")
+                run_dict_path = (
+                "C:/Users/Christian/Documents/StudiumPhD/python/wire_analysis"
+                            + os.sep +"\\wire_analysis\\output\\test.json")
                 ):
         #define parameters
         self.y0_default =  y0_default # mm (estimated from CAD)
@@ -490,7 +492,8 @@ class Beamfit():
 
 
 if __name__ == "__main__":
-    beamfit = Beamfit(run_dict_path=".\\wire_analysis\\output\\" + "test.json")
+    # beamfit = Beamfit(run_dict_path=".\\wire_analysis\\output\\" + "test.json")
+    beamfit = Beamfit()
     beamfit.test_fitting()
 
 

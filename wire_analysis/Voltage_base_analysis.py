@@ -16,7 +16,7 @@ from decimal import Decimal
 def remove_exponent(d):
     return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()
 
-import pressure_analysis as pa
+#import pressure_analysis as pa
 
 #plot Options
 import matplotlib as mpl
