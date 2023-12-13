@@ -6,6 +6,7 @@ from scipy.optimize import minimize
 from scipy.interpolate import interp1d
 
 import os
+import json
 
 #######Imports from  other submodules
 # Put  these into a  utils.py?
@@ -49,7 +50,8 @@ class Beamfit():
     
     """
     def __init__(self,
-                y0_default = 35.17, # mm (estimated from CAD)
+                y0_default = 35.17, # mm (estimated from CAD),
+                run_dict_path = (".\\wire_analysis\\output\\test.json")
                 ):
         #define parameters
         self.y0_default =  y0_default # mm (estimated from CAD)
@@ -63,7 +65,23 @@ class Beamfit():
         self.init_eta_wire_sim()
             #Allow for later adjustment of default eta 
         self.eta_wire_default = self.eta_wire_sim
+
+        #load run_dict
+        self.run_dict = self.load_run_dict(run_dict_path)
+
         return
+
+
+    def save_run_dict(self, run_dict_path):
+        with open((run_dict_path), 'w', encoding='utf-8') as f:
+            json.dump(self.run_dict, f, ensure_ascii=False, indent=4)
+        return
+
+    def load_run_dict(self, run_dict_path):
+        with open(run_dict_path, 'r', encoding='utf-8') as f:
+            rd_load = json.load(f)
+        return rd_load
+
 
 
     # Auxiliary functions required for profile shape according to
@@ -249,6 +267,85 @@ class Beamfit():
 
     #################################################
 
+    def test_fitting(self,
+                     ):
+        rd = self.run_dict
+        # Just for testing
+        # rd["ext_dict_name"] = (rd["plot_dir"] + rd["run_name"] + os.sep 
+        #                     + "ext_dict")
+        ext_dict = load_dict(rd["ext_dict_name"])
+
+        result_dict_unsorted = make_result_dict(ext_dict)
+
+        z_array_unsorted = np.array(rd["z_list_unsorted"])
+
+        # Sort these:
+        z_arr, result_dict = sort_by_z_list(z_array_unsorted,
+                                            result_dict_unsorted)
+
+        P_arr = result_dict["p_arr"]
+        P_err_arr = result_dict["p_err_arr"]
+
+        [a,b,c] = rd["selection_indices"]
+        #neglegt leading selected points
+        P_arr = P_arr[a:b:c]
+        P_err_arr = P_err_arr[a:b:c]
+        z_arr = z_arr[a:b:c]
+
+        # rd["fit_start"] = {
+        #     "l_eff" : 3.0,
+        #     "theta_max" : 24.2 * beamfit.degree,
+        #     "z0" : 1.51,
+        #     "A" : 0.02415, # motivated by fit
+        #     "P_0" : -0.10 # motivated by fit
+        # }
+        # rd["fit_start"]["A_bound"] = [rd["fit_start"]["A"] * 0.3,
+        #                             rd["fit_start"]["A"] * 3]
+
+        l_eff = rd["fit_start"]["l_eff"]
+        theta_max = rd["fit_start"]["theta_max"]
+        z0 = rd["fit_start"]["z0"]
+        A = rd["fit_start"]["A"]
+        P_0 = rd["fit_start"]["P_0"]
+        A_bound = rd["fit_start"]["A_bound"]
+        # ##### All parameters except theta_max
+        P_int_fit = lambda z_space, l_eff, A , z0, P_0: beamfit.P_int(
+                        z_space, l_eff, theta_max, z0, A, P_0)
+
+        # Use errors as absolute to get proper error estimation
+        popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
+                            sigma = P_err_arr,
+                            absolute_sigma= False,
+                            p0 = [l_eff, A,  z0, P_0], 
+                            bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1],
+                                    [20,  A_bound[1],  z0 + 1, P_0 + 0.1])
+                            )
+        ######
+
+        print(popt_abs, pcov_abs)
+        for i, p in enumerate(popt_abs):
+            print(f"parameter {i:.0f}: {p:.5f}"
+                +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
+
+        #### plot
+        z_space = np.linspace(-11,20,num=100)
+
+        P_space_eye= P_int_fit(z_space, *popt_abs)
+        P_arr_eye = P_int_fit(z_arr, *popt_abs)
+
+        # Angle plot
+        plot_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
+                + "output/")
+        os.makedirs(plot_dir, exist_ok=True)
+        beamfit.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+            , z_space,P_space_eye, scale_residuals=True, 
+            plot_angles=True, z0=popt_abs[2],
+            theta_max=theta_max/beamfit.degree,
+            l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
+                     + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
+                     plotname = "test_" + rd["run_name"])
+
+
     #define plottign function:
     # TODO Rework: its just a straight copy for now
     def plot_fit(self,
@@ -379,10 +476,10 @@ class Beamfit():
 
         format_im = 'png' #'pdf' or png
         dpi = 300
-        plt.savefig(plot_dir + plotname
+        plt.savefig(self.run_dict["plot_dir"] + plotname
                     + '.{}'.format(format_im),
                     format=format_im, dpi=dpi)
-        plt.show()
+        # plt.show()
         ax1.cla()
         fig.clf()
         plt.close()
@@ -393,13 +490,34 @@ class Beamfit():
 
 
 if __name__ == "__main__":
+    beamfit = Beamfit(run_dict_path=".\\wire_analysis\\output\\" + "test.json")
+    beamfit.test_fitting()
+
+
     # Test using 1 sccm,  1500K
     # run_name = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
     # Make fit run dictionary
     # # TODO Should this not rather be a class of its oown, so it can suggest its
     # #  options?
+    # Solution for turnign class parameters into dict: 
+    # You need to filter out functions and built-in class attributes.
+
+    # >>> class A:
+    # ...     a = 3
+    # ...     b = 5
+    # ...     c = 6
+    # ... 
+    # >>> {key:value for key, value in A.__dict__.items() if not 
+    # key.startswith('__') and not callable(key)}
+    # {'a': 3, 'c': 6, 'b': 5}
+
+    # beamfit = Beamfit()
+    # print(beamfit.run_dict)
+
+
     # run_dict = {}
     # rd = run_dict
+    
     # run_dict["base_dir"] =  ("C:/Users/Christian/Documents/StudiumPhD/python/"
     #                         + "Keysight-DMM-34461A/analysis/")
     # run_dict["plot_dir"] = (run_dict["base_dir"] + os.sep 
@@ -416,115 +534,162 @@ if __name__ == "__main__":
     # # Which in turn  requires others, so we need to update the entire 
     # # series to put them in the package
 
-    # ext_dict = load_dict(rd["plot_dir"] + rd["run_name"] + os.sep 
+    # rd["ext_dict_name"] = (rd["plot_dir"] + rd["run_name"] + os.sep 
     #                         + "ext_dict")
+    # ext_dict = load_dict(rd["ext_dict_name"])
 
-    # run_dict[""]
+    # result_dict_unsorted = make_result_dict(ext_dict)
 
-    ########################
-    # Direct copy code from 
-    # HABS_beam_profile_fitting_4.1.1.1_cos3_low_temp_1sccm.ipynb
-    # to test functionality
+    # rd["z_list_unsorted"] = [-11, -6, -1.5,  1,  3.5,
+    #                 7, 12,  20,  -10, -5,
+    #                 -1, 1.5, 4, 8, 13, 
+    #                 18, -9, -4, -0.5, 2,
+    #                 4.5, 9, 14, 19, -8,
+    #                 -3, 0, 2.5, 5, 10,
+    #                 15, 17, -7, -2, 0.5,
+    #                 3, 6, 11, 16
+    #                 ] # rd can only contain jsonable items, 
+    # z_array_unsorted = np.array(rd["z_list_unsorted"])
 
-    beamfit = Beamfit()
+    # # Sort these:
+    # z_arr, result_dict = sort_by_z_list(z_array_unsorted,
+    #                                      result_dict_unsorted)
 
-    # Define locations:
-    base_dir  = ("C:/Users/Christian/Documents/StudiumPhD/python/"
-                + "Keysight-DMM-34461A/analysis/")
-    plot_dir = (base_dir + os.sep 
-                + "output/flow_on_off/")
+    # P_arr = result_dict["p_arr"]
+    # P_err_arr = result_dict["p_err_arr"]
 
-    sc_dir = (base_dir
-            + os.sep + "../" 
-            + "SC_downloads/")
+    # rd["selection_indices"] = [3,100000,1] # 1e9 is simply larger than the list
+    # [a,b,c] = rd["selection_indices"]
+    # #neglegt leading selected points
+    # P_arr = P_arr[a:b:c]
+    # P_err_arr = P_err_arr[a:b:c]
+    # z_arr = z_arr[a:b:c]
 
-    run_name = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
-    data_name = run_name
-    #data2_name = run_name + "Wire2"
+    # rd["fit_start"] = {
+    #     "l_eff" : 3.0,
+    #     "theta_max" : 24.2 * beamfit.degree,
+    #     "z0" : 1.51,
+    #     "A" : 0.02415, # motivated by fit
+    #     "P_0" : -0.10 # motivated by fit
+    # }
+    # rd["fit_start"]["A_bound"] = [rd["fit_start"]["A"] * 0.3,
+    #                               rd["fit_start"]["A"] * 3]
 
-    ext_dict = load_dict(plot_dir + run_name + os.sep 
-                                + "ext_dict")
-    result_dict_unsorted = make_result_dict(ext_dict)
+    # import json
+    # out_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
+    #         + "output/")
+    # os.makedirs(out_dir, exist_ok=True)
+    # with open((out_dir + 'test.json'), 'w', encoding='utf-8') as f:
+    #     json.dump(rd, f, ensure_ascii=False, indent=4)
 
-    #print(result_dict.items())
+    # with open((out_dir + 'test.json'), 'r', encoding='utf-8') as f:
+    #     rd_load = json.load(f)
+    # print(rd_load)
 
-    #TODO put z_list in results_dict iif applicable
-    z_list_unsorted = np.array( [-11, -6, -1.5,  1,  3.5,
-                        7, 12,  20,  -10, -5,
-                        -1, 1.5, 4, 8, 13, 
-                        18, -9, -4, -0.5, 2,
-                        4.5, 9, 14, 19, -8,
-                        -3, 0, 2.5, 5, 10,
-                        15, 17, -7, -2, 0.5,
-                        3, 6, 11, 16
-                        ])
-    # Sort these:
-    z_arr, result_dict = sort_by_z_list(z_list_unsorted, result_dict_unsorted)
+    # # ########################
+    # # # Direct copy code from 
+    # # # HABS_beam_profile_fitting_4.1.1.1_cos3_low_temp_1sccm.ipynb
+    # # # to test functionality
 
-    P_arr = result_dict["p_arr"]
-    P_err_arr = result_dict["p_err_arr"]
+    # # beamfit = Beamfit()
 
-    #neglegt leading 3 points
-    P_arr = P_arr[3::]
-    P_err_arr = P_err_arr[3::]
-    z_arr = z_arr[3::]
+    # # # Define locations:
+    # # base_dir  = ("C:/Users/Christian/Documents/StudiumPhD/python/"
+    # #             + "Keysight-DMM-34461A/analysis/")
+    # # plot_dir = (base_dir + os.sep 
+    # #             + "output/flow_on_off/")
 
+    # # sc_dir = (base_dir
+    # #         + os.sep + "../" 
+    # #         + "SC_downloads/")
 
-    # Starting Parameters
-    l_eff = 3.0
-    theta_max = 24.2 * beamfit.degree  # motivated loosely by HABS model, 
-                            # adjusted to fit
-    z0 = 1.51
-    rescale = 1.25
-    A = 0.02415  # motivated by fit
-    print("A_start:", A)
+    # # run_name = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
+    # # data_name = run_name
+    # # #data2_name = run_name + "Wire2"
 
-    A_low = A * 0.3
-    A_high = A * 3
+    # # ext_dict = load_dict(plot_dir + run_name + os.sep 
+    # #                             + "ext_dict")
+    # # result_dict_unsorted = make_result_dict(ext_dict)
 
+    # # #print(result_dict.items())
 
-    P_0 = -0.10 # motivated by fit
+    # # #TODO put z_list in results_dict iif applicable
+    # # z_list_unsorted = np.array( [-11, -6, -1.5,  1,  3.5,
+    # #                     7, 12,  20,  -10, -5,
+    # #                     -1, 1.5, 4, 8, 13, 
+    # #                     18, -9, -4, -0.5, 2,
+    # #                     4.5, 9, 14, 19, -8,
+    # #                     -3, 0, 2.5, 5, 10,
+    # #                     15, 17, -7, -2, 0.5,
+    # #                     3, 6, 11, 16
+    # #                     ])
+    # # # Sort these:
+    # # z_arr, result_dict = sort_by_z_list(z_list_unsorted, result_dict_unsorted)
 
-    ##### All parameters except theta_max
-    P_int_fit = lambda z_space, l_eff, A , z0, P_0: beamfit.P_int(
-                    z_space, l_eff, theta_max, z0, A, P_0)
+    # # P_arr = result_dict["p_arr"]
+    # # P_err_arr = result_dict["p_err_arr"]
 
-    # Use errors as absolute to get proper error estimation
-    popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
-                        sigma = P_err_arr,
-                        absolute_sigma= False,
-                        p0 = [l_eff, A,  z0, P_0], 
-                        bounds=([2, A_low,  z0 - 1, P_0 - 0.1],
-                                [20,  A_high,  z0 + 1, P_0 + 0.1])
-                        )
-    ######
-
-    print(popt_abs, pcov_abs)
-    for i, p in enumerate(popt_abs):
-        print(f"parameter {i:.0f}: {p:.5f}"
-            +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
-
-    #### plot
-    z_space = np.linspace(-11,20,num=40)
-
-    P_space_eye= P_int_fit(z_space, *popt_abs)
-    P_arr_eye = P_int_fit(z_arr, *popt_abs)
-
-    # plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
-    #      , z_space,P_space_eye)
-    # plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
-    #      , z_space,P_space_eye, scale_residuals=True)
-
-    # Angle plot
-    plot_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
-            + "output/")
-    os.makedirs(plot_dir, exist_ok=True)
+    # # #neglegt leading 3 points
+    # # P_arr = P_arr[3::]
+    # # P_err_arr = P_err_arr[3::]
+    # # z_arr = z_arr[3::]
 
 
+    # # # Starting Parameters
+    # # l_eff = 3.0
+    # # theta_max = 24.2 * beamfit.degree  # motivated loosely by HABS model, 
+    # #                         # adjusted to fit
+    # # z0 = 1.51
+    # # rescale = 1.25
+    # # A = 0.02415  # motivated by fit
+    # # print("A_start:", A)
 
-    beamfit.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
-         , z_space,P_space_eye, scale_residuals=True, 
-         plot_angles=True, z0=popt_abs[2], theta_max=theta_max/beamfit.degree,
-         l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
-                     + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
-                     plotname = "test")
+    # # A_low = A * 0.3
+    # # A_high = A * 3
+
+
+    # # P_0 = -0.10 # motivated by fit
+
+    # # ##### All parameters except theta_max
+    # # P_int_fit = lambda z_space, l_eff, A , z0, P_0: beamfit.P_int(
+    # #                 z_space, l_eff, theta_max, z0, A, P_0)
+
+    # # # Use errors as absolute to get proper error estimation
+    # # popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
+    # #                     sigma = P_err_arr,
+    # #                     absolute_sigma= False,
+    # #                     p0 = [l_eff, A,  z0, P_0], 
+    # #                     bounds=([2, A_low,  z0 - 1, P_0 - 0.1],
+    # #                             [20,  A_high,  z0 + 1, P_0 + 0.1])
+    # #                     )
+    # # ######
+
+    # # print(popt_abs, pcov_abs)
+    # # for i, p in enumerate(popt_abs):
+    # #     print(f"parameter {i:.0f}: {p:.5f}"
+    # #         +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
+
+    # # #### plot
+    # # z_space = np.linspace(-11,20,num=40)
+
+    # # P_space_eye= P_int_fit(z_space, *popt_abs)
+    # # P_arr_eye = P_int_fit(z_arr, *popt_abs)
+
+    # # # plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+    # # #      , z_space,P_space_eye)
+    # # # plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+    # # #      , z_space,P_space_eye, scale_residuals=True)
+
+    # # # Angle plot
+    # # plot_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
+    # #         + "output/")
+    # # os.makedirs(plot_dir, exist_ok=True)
+
+
+
+    # # beamfit.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+    # #      , z_space,P_space_eye, scale_residuals=True, 
+    # #      plot_angles=True, z0=popt_abs[2], theta_max=theta_max/beamfit.degree,
+    # #      l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
+    # #                  + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
+    # #                  plotname = "test")
