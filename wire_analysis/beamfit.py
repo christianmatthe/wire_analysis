@@ -544,6 +544,35 @@ class Beamfit():
         fig.clf()
         plt.close()
 
+    # HACK HACK HACK
+    # make old pkl files loadable by loading them with old legacy code and 
+    # extracting the  result_dict
+    def legacy_load_pkl(self, pkl_path):
+        # import sys
+        # import os
+        # # Put legacy script  in path
+        # SCRIPT_DIR = os.path.dirname(
+        #     "C:\\Users\\Christian\\Documents\\StudiumPhD\\"
+        #     + "python\\Keysight-DMM-34461A\\analysis\\")
+        
+        # sys.path.append(os.path.dirname(SCRIPT_DIR))
+        # import flow_on_off_cycle_analysis_2 as fca2
+        # result_dict_unsorted = fca2.legacy_load_pkl(pkl_path)
+        # return result_dict_unsorted
+
+
+        # # Option 2: exectue legacy code in place:
+        # path = ("C:\\Users\\Christian\\Documents\\StudiumPhD\\"
+        #     + "python\\Keysight-DMM-34461A\\analysis\\"
+        #     + "flow_on_off_cycle_analysis_2.py")
+        # exec(open(path).read())
+
+        # Option 3 just read locallyreexported result_dict.pkl
+        result_dict_unsorted = load_dict(pkl_path)
+
+
+        return result_dict_unsorted 
+
 
 
         
