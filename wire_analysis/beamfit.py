@@ -50,13 +50,21 @@ class Beamfit():
     run_dict_path = `str`
         path string to the run_dict.json which contains the information how
         to run the analysis, and where thefit reslsts are saved.
+        Contents of run_dict:
+
     
     """
     def __init__(self,
                 run_dict_path = ""
                 ):
+        # Check that valid run_dict path was entered
+        if os.path.isfile(run_dict_path):
+            pass
+        else:
+            print("please ennter a valid run_dict_path")
+            exit()
         #define parameters
-
+        self.run_dict_path = run_dict_path
 
 
         #define constants
@@ -69,7 +77,7 @@ class Beamfit():
 
         #load run_dict
         self.run_dict = self.load_run_dict(run_dict_path)
-        self.y0_default =  self.run_dict["fit_start"]["y_0"] 
+        self.y0_default =  self.run_dict["fit_start"]["y0"] 
             # mm (estimated from CAD) not  fitted by default
 
         return
@@ -270,6 +278,35 @@ class Beamfit():
 
     #################################################
 
+    # save to run dict:
+    def save_fit_results(self, popt_abs, pcov_abs):
+        rd = self.run_dict
+        rd["fit_result"] = {}
+        rd["fit_result_errors"] = {}
+        ############
+        rd["fit_result"]["l_eff"] = popt_abs[0]
+        rd["fit_result"]["A"] = popt_abs[1]
+        rd["fit_result"]["z0"] = popt_abs[2]
+        rd["fit_result"]["P_0"] = popt_abs[3]
+        # currently not fitted
+        rd["fit_result"]["theta_max"] = rd["fit_start"]["theta_max"]
+        rd["fit_result"]["y0"] = rd["fit_start"]["y0"]
+
+        # Also save errors
+        # cannot be numpy array, to make json serializable
+        rd["fit_result_errors"]["l_eff"] = np.sqrt(pcov_abs[0,0])
+        rd["fit_result_errors"]["A"] = np.sqrt(pcov_abs[1,1])
+        rd["fit_result_errors"]["z0"] = np.sqrt(pcov_abs[2,2])
+        rd["fit_result_errors"]["P_0"] = np.sqrt(pcov_abs[3,3])
+
+        # currently not fitted
+        rd["fit_result_errors"]["theta_max"] = float('nan')
+        rd["fit_result_errors"]["y0"] = float('nan')
+
+        # Save to file
+        self.save_run_dict(run_dict_path= self.run_dict_path)
+        return
+
     def test_fitting(self,
                      ):
         rd = self.run_dict
@@ -387,7 +424,9 @@ class Beamfit():
         for i, p in enumerate(popt_abs):
             print(f"parameter {i:.0f}: {p:.5f}"
                 +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
-
+        # save to file
+        self.save_fit_results(popt_abs, pcov_abs)
+            
         #### plot
         z_space = np.linspace(-11,20,num=100)
 
