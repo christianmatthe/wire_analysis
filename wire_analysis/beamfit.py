@@ -61,7 +61,7 @@ class Beamfit():
         if os.path.isfile(run_dict_path):
             pass
         else:
-            print("please ennter a valid run_dict_path")
+            print("please enter a valid run_dict_path")
             exit()
         #define parameters
         self.run_dict_path = run_dict_path
@@ -77,8 +77,16 @@ class Beamfit():
 
         #load run_dict
         self.run_dict = load_json_dict(run_dict_path)
+        rd = self.run_dict
         self.y0_default =  self.run_dict["fit_start"]["y0"] 
             # mm (estimated from CAD) not  fitted by default
+
+        # Initialize output dir
+        self.out_dir = rd["out_dir_base"] + rd["analysis_run_name"] + os.sep 
+        os.makedirs(self.out_dir, exist_ok=True)
+        # initialize run_dict json name and save it into the out_dir
+        # Chop filename off the end of the run_dict path
+        self.run_dict_name = os.path.split(self.run_dict_path)[1]
 
         return
 
@@ -92,6 +100,18 @@ class Beamfit():
     #     with open(dict_path, 'r', encoding='utf-8') as f:
     #         dict_load = json.load(f)
     #     return dict_load
+
+    def save_json_run_dict(self, dict_path, dict):
+        save_json_dict(dict_path, dict)
+        #also  save to out_dir, so anything that is saved elsewhere can be
+        # identified with its run
+        save_json_dict(self.out_dir + self.run_dict_name, dict)
+        return
+
+    def load_json_dict(self, dict_path):
+        with open(dict_path, 'r', encoding='utf-8') as f:
+            dict_load = json.load(f)
+        return dict_load
 
 
 
@@ -304,17 +324,17 @@ class Beamfit():
         rd["fit_result_errors"]["y0"] = None
 
         # Save to file
-        save_json_dict(dict_path= self.run_dict_path, 
+        self.save_json_run_dict(dict_path= self.run_dict_path, 
                             dict = self.run_dict)
         return
 
-    def test_fitting(self,
+    def default_fit(self,
                      ):
         rd = self.run_dict
         ######################################
         # Load from newly reformatted result dict files
         extractor_dict_unsorted = load_extractor_dict_json(
-                                rd["extractor_dict_name"])
+                                rd["extractor_dict_path"])
         # ##############
         z_array_unsorted = np.array(rd["z_list_unsorted"])
 
@@ -366,15 +386,13 @@ class Beamfit():
         P_arr_eye = P_int_fit(z_arr, *popt_abs)
 
         # Angle plot
-        plot_dir = rd["plot_dir"]
-        os.makedirs(plot_dir, exist_ok=True)
         self.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
             , z_space,P_space_eye, scale_residuals=True, 
             plot_angles=True, z0=popt_abs[2],
             theta_max=theta_max/self.degree,
             l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
                      + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
-                     plotname = "test_" + rd["run_name"])
+                     plotname = "default_fit_plot")
 
 
     #define plottign function:
@@ -507,13 +525,18 @@ class Beamfit():
 
         format_im = 'png' #'pdf' or png
         dpi = 300
-        plt.savefig(self.run_dict["plot_dir"] + plotname
+        plt.savefig(self.out_dir + plotname
                     + '.{}'.format(format_im),
                     format=format_im, dpi=dpi)
         # plt.show()
         ax1.cla()
         fig.clf()
         plt.close()
+        # Make sure there is always a copy of the analyssi_run_dict.json saved
+        #  with the plot
+        # Save to file (saves additional  copy  to out_dir)
+        self.save_json_run_dict(dict_path= self.run_dict_path, 
+                            dict = self.run_dict)
 
     # HACK HACK HACK
     # make old pkl files loadable by loading them with old legacy code and 
