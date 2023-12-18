@@ -45,18 +45,17 @@ class Beamfit():
 
     Parameters
     ----------
-    y0_default :  `float`
-        default distance from wire to source [mm]
+    # y0_default :  `float`
+    #     default distance from wire to source [mm]
+    run_dict_path = `str`
+        path string to the run_dict.json which contains the information how
+        to run the analysis, and where thefit reslsts are saved.
     
     """
     def __init__(self,
-                y0_default = 35.17, # mm (estimated from CAD),
-                run_dict_path = (
-                "C:/Users/Christian/Documents/StudiumPhD/python/wire_analysis"
-                            + os.sep +"\\wire_analysis\\output\\test.json")
+                run_dict_path = ""
                 ):
         #define parameters
-        self.y0_default =  y0_default # mm (estimated from CAD)
 
 
 
@@ -70,6 +69,8 @@ class Beamfit():
 
         #load run_dict
         self.run_dict = self.load_run_dict(run_dict_path)
+        self.y0_default =  self.run_dict["fit_start"]["y_0"] 
+            # mm (estimated from CAD) not  fitted by default
 
         return
 
@@ -579,9 +580,10 @@ class Beamfit():
 
 
 if __name__ == "__main__":
-    # beamfit = Beamfit(run_dict_path=".\\wire_analysis\\output\\" + "test.json")
-    beamfit = Beamfit()
-    beamfit.test_fitting()
+    pass
+    # # beamfit = Beamfit(run_dict_path=".\\wire_analysis\\output\\" + "test.json")
+    # beamfit = Beamfit()
+    # beamfit.test_fitting()
 
 
     # Test using 1 sccm,  1500K
