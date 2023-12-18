@@ -93,16 +93,16 @@ class Beamfit():
     #         dict_load = json.load(f)
     #     return dict_load
 
-    def import_legacy_result_dict(self,
+    def import_legacy_extractor_dict(self,
                                   dict_path
                                   ):
-        result_dict_unsorted_lists = load_json_dict(dict_path=dict_path)
-        result_dict_unsorted  ={}
-        for key,val in result_dict_unsorted_lists.items():
+        extractor_dict_unsorted_lists = load_json_dict(dict_path=dict_path)
+        extractor_dict_unsorted  ={}
+        for key,val in extractor_dict_unsorted_lists.items():
             # every numpy array must become a list
-            result_dict_unsorted[key] = (np.array(
-                result_dict_unsorted_lists[key]))
-        return result_dict_unsorted
+            extractor_dict_unsorted[key] = (np.array(
+                extractor_dict_unsorted_lists[key]))
+        return extractor_dict_unsorted
 
 
 
@@ -339,11 +339,11 @@ class Beamfit():
         # result_dict_unsorted = make_result_dict(ext_dict)
         ######################################
         # Load from newly reformatted result dict files
-        result_dict_unsorted = self.import_legacy_result_dict(
-                                rd["result_dict_name"])
+        extractor_dict_unsorted = self.import_legacy_extractor_dict(
+                                rd["extractor_dict_name"])
         # ##############
 
-        # result_dict_unsorted ={
+        # extractor_dict_unsorted ={
         # 'µW_per_ohm': np.array([
         #     6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
         #     6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
@@ -394,11 +394,11 @@ class Beamfit():
         z_array_unsorted = np.array(rd["z_list_unsorted"])
 
         # Sort these:
-        z_arr, result_dict = sort_by_z_list(z_array_unsorted,
-                                            result_dict_unsorted)
+        z_arr, extractor_dict = sort_by_z_list(z_array_unsorted,
+                                            extractor_dict_unsorted)
 
-        P_arr = result_dict["p_arr"]
-        P_err_arr = result_dict["p_err_arr"]
+        P_arr = extractor_dict["p_arr"]
+        P_err_arr = extractor_dict["p_err_arr"]
 
         [a,b,c] = rd["selection_indices"]
         #neglegt leading selected points
@@ -623,10 +623,10 @@ class Beamfit():
         # exec(open(path).read())
 
         # Option 3 just read locallyreexported result_dict.pkl
-        result_dict_unsorted = load_dict(pkl_path)
+        extractor_dict_unsorted = load_dict(pkl_path)
 
 
-        return result_dict_unsorted 
+        return extractor_dict_unsorted 
 
 
 
