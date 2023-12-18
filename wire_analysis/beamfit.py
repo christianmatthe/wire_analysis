@@ -101,7 +101,13 @@ class Beamfit():
     #         dict_load = json.load(f)
     #     return dict_load
 
-    def save_json_run_dict(self, dict_path, dict):
+    def save_json_run_dict(self, dict_path = None, dict = None):
+        # If no values are supplied save the current run_dict to the current 
+        # run_dict_path
+        if dict_path is None:
+            dict_path = self.run_dict_path
+        if dict is None:
+            dict = self.run_dict
         save_json_dict(dict_path, dict)
         #also  save to out_dir, so anything that is saved elsewhere can be
         # identified with its run
@@ -532,7 +538,7 @@ class Beamfit():
         ax1.cla()
         fig.clf()
         plt.close()
-        # Make sure there is always a copy of the analyssi_run_dict.json saved
+        # Make sure there is always a copy of the analysis_run_dict.json saved
         #  with the plot
         # Save to file (saves additional  copy  to out_dir)
         self.save_json_run_dict(dict_path= self.run_dict_path, 

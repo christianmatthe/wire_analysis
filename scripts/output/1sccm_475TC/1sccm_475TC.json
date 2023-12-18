@@ -1,5 +1,5 @@
 {
-    "out_dir_base": "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis\\scripts\\2023-12-18_no_cracking_H2\\output\\",
+    "out_dir_base": "C:/Users/Christian/Documents/StudiumPhD/python/wire_analysis/scripts\\output/",
     "analysis_run_name": "1sccm_475TC",
     "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2023-09-15_1sccm_475TC_z-scan_jf+hg_wire\\extractor_dict.json",
     "z_list_unsorted": [
