@@ -72,7 +72,10 @@ def predict_power_H2(T, x_lims = [-10, 10],
             ):
     sccm = 4.478 * 10**17 # particles per second
     flow = 1 * sccm
-    integral = integrate_H_on_plane_1D_etaW(x_lims = x_lims,
+
+    #TODO Check if the detour is necessary or w ecould just start with the
+    #  weighted interal
+    integral = integrate_H_on_plane_1D(x_lims = x_lims,
                 z_lims = z_lims,
                 l_eff = l_eff,
                 theta_max =  theta_max,
@@ -104,14 +107,18 @@ def calc_accomodation_coefficient(p_measured, T, x_lims = [-10, 10],
     # Before adjusting for beam distribution
     # Using the in vs outo-of-beam method (PROBLEMATIC HACK)
     # TODO account for th efac tthat "out-of-beam" isnt really
-    effective_wire_eff  = p_measured/ (predict_power_H2(T,
+    power_H2 = predict_power_H2(T,
                 x_lims = x_lims,
                 z_lims = z_lims,
                 l_eff = l_eff,
                 theta_max =  theta_max,
                 z0 = z0,
                 y0=  y0,
-                err = err,) )
+                err = err,)
+    effective_wire_eff  = p_measured/ power_H2
+    print("P_meas", p_measured * 1e6, "µW")
+    print("P_predict", power_H2 * 1e6, "µW")
+    print("effective_wire_eff", effective_wire_eff)
 
 
 

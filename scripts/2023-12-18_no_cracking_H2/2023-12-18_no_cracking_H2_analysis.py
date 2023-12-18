@@ -55,7 +55,7 @@ for i,TC in enumerate(TC_lst):
     # vs "out of beam" power
     p_measured = (np.max(extractor_dict["p_arr"])
                   - np.min(extractor_dict["p_arr"])) * 1e-6
-    print(p_measured)
+    # print(p_measured)
     ac = calc_accomodation_coefficient(
         p_measured = p_measured,
         T = T_lst[i],
