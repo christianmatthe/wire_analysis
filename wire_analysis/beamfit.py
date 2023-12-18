@@ -13,7 +13,7 @@ import json
 # THis is currently a bad way to do it
 from .flow_on_off_cycle_analysis import (load_dict, make_result_dict, 
                                         sort_by_z_list)
-from .utils import (load_json_dict, save_json_dict)
+from .utils import (load_json_dict, save_json_dict, load_extractor_dict_json)
 
 ########
 
@@ -92,17 +92,6 @@ class Beamfit():
     #     with open(dict_path, 'r', encoding='utf-8') as f:
     #         dict_load = json.load(f)
     #     return dict_load
-
-    def import_legacy_extractor_dict(self,
-                                  dict_path
-                                  ):
-        extractor_dict_unsorted_lists = load_json_dict(dict_path=dict_path)
-        extractor_dict_unsorted  ={}
-        for key,val in extractor_dict_unsorted_lists.items():
-            # every numpy array must become a list
-            extractor_dict_unsorted[key] = (np.array(
-                extractor_dict_unsorted_lists[key]))
-        return extractor_dict_unsorted
 
 
 
@@ -322,75 +311,11 @@ class Beamfit():
     def test_fitting(self,
                      ):
         rd = self.run_dict
-        # Just for testing
-        # rd["ext_dict_name"] = (rd["plot_dir"] + rd["run_name"] + os.sep 
-        #                     + "ext_dict")
-
-        # Code below causes issues when loading old .pkl which expect to find
-        # module "flow_on_off_cycle_analysis_2"
-        # Note ext_dict is a misnomer annd actually a commplex .pkl object
-        # rather than a dict
-        # Mitigated by simply starting from the finished results_dict
-        # "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire" as example
-
-        ###########################
-        # ext_dict = load_dict(rd["ext_dict_name"])
-
-        # result_dict_unsorted = make_result_dict(ext_dict)
         ######################################
         # Load from newly reformatted result dict files
-        extractor_dict_unsorted = self.import_legacy_extractor_dict(
+        extractor_dict_unsorted = load_extractor_dict_json(
                                 rd["extractor_dict_name"])
         # ##############
-
-        # extractor_dict_unsorted ={
-        # 'µW_per_ohm': np.array([
-        #     6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
-        #     6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
-        #     6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
-        #     6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400., 6400.,
-        #     6400., 6400., 6400.]), 
-        # 'v_mean_arr': np.array([
-        #     -6.27279427e-06,  2.55525178e-05,  3.96072709e-05,  4.57582334e-05,
-        #     4.32056391e-05,  3.26924499e-05,  1.85872156e-05, -1.21510254e-05,
-        #     2.63207578e-07,  2.74459520e-05,  3.96955313e-05,  4.54040753e-05,
-        #     3.89842708e-05,  2.64444845e-05,  1.65740388e-05, -1.34799988e-05,
-        #     1.25020691e-05,  3.02912127e-05,  3.81763532e-05,  3.96946576e-05,
-        #     3.45319325e-05,  2.44688085e-05,  1.46194838e-05, -1.40362281e-05,
-        #     1.76820251e-05,  3.09132803e-05,  3.91618281e-05,  4.29136770e-05,
-        #     3.55290311e-05,  2.21206381e-05,  8.46465544e-06, -6.39917090e-06,
-        #     2.04199024e-05,  3.31100794e-05,  4.20899083e-05,  3.85805948e-05,
-        #     3.31826902e-05,  1.88283577e-05,  1.50565149e-06]),
-        # 'v_err_arr': np.array([
-        #     3.02529329e-06, 5.72563122e-07, 3.82400676e-07, 1.49048688e-06,
-        #     3.12795445e-06, 3.77510309e-07, 2.71503146e-06, 2.65761113e-06,
-        #     3.22700593e-07, 1.52502856e-06, 4.96211680e-07, 3.97699863e-07,
-        #     6.28612322e-06, 1.15698143e-05, 6.77812478e-06, 9.71844756e-06,
-        #     2.04565200e-06, 2.93048324e-06, 3.32563259e-06, 3.42367704e-06,
-        #     2.06030150e-06, 1.88978687e-06, 3.70976116e-06, 3.25333156e-06,
-        #     1.86716072e-06, 2.81329803e-06, 8.96132272e-07, 4.86207986e-06,
-        #     8.97542399e-07, 7.88947075e-07, 3.86361480e-06, 2.69329214e-06,
-        #     1.16845657e-06, 3.13262499e-06, 4.71695614e-06, 8.13435691e-07,
-        #     7.13470087e-06, 3.73952906e-06, 7.91830370e-07]), 
-        # 'p_arr': np.array([
-        #     -0.04014588,  0.16353611,  0.25348653,  0.29285269,  0.27651609,
-        #     0.20923168,  0.11895818, -0.07776656,  0.00168453,  0.17565409,
-        #     0.2540514 ,  0.29058608,  0.24949933,  0.1692447 ,  0.10607385,
-        #     -0.08627199,  0.08001324,  0.19386376,  0.24432866,  0.25404581,
-        #     0.22100437,  0.15660037,  0.0935647 , -0.08983186,  0.11316496,
-        #     0.19784499,  0.2506357 ,  0.27464753,  0.2273858 ,  0.14157208,
-        #     0.05417379, -0.04095469,  0.13068738,  0.21190451,  0.26937541,
-        #     0.24691581,  0.21236922,  0.12050149,  0.00963617]),
-        # 'p_err_arr': np.array([
-        #     0.01936188, 0.0036644 , 0.00244736, 0.00953912, 0.02001891,
-        #     0.00241607, 0.0173762 , 0.01700871, 0.00206528, 0.00976018,
-        #     0.00317575, 0.00254528, 0.04023119, 0.07404681, 0.04338   ,
-        #     0.06219806, 0.01309217, 0.01875509, 0.02128405, 0.02191153,
-        #     0.01318593, 0.01209464, 0.02374247, 0.02082132, 0.01194983,
-        #     0.01800511, 0.00573525, 0.03111731, 0.00574427, 0.00504926,
-        #     0.02472713, 0.01723707, 0.00747812, 0.0200488 , 0.03018852,
-        #     0.00520599, 0.04566209, 0.02393299, 0.00506771])}
-
         z_array_unsorted = np.array(rd["z_list_unsorted"])
 
         # Sort these:
@@ -406,16 +331,7 @@ class Beamfit():
         P_err_arr = P_err_arr[a:b:c]
         z_arr = z_arr[a:b:c]
 
-        # rd["fit_start"] = {
-        #     "l_eff" : 3.0,
-        #     "theta_max" : 24.2 * self.degree,
-        #     "z0" : 1.51,
-        #     "A" : 0.02415, # motivated by fit
-        #     "P_0" : -0.10 # motivated by fit
-        # }
-        # rd["fit_start"]["A_bound"] = [rd["fit_start"]["A"] * 0.3,
-        #                             rd["fit_start"]["A"] * 3]
-
+        # initiate fit parameters
         l_eff = rd["fit_start"]["l_eff"]
         theta_max = rd["fit_start"]["theta_max"]
         z0 = rd["fit_start"]["z0"]
@@ -635,207 +551,4 @@ class Beamfit():
 
 if __name__ == "__main__":
     pass
-    # # beamfit = Beamfit(run_dict_path=".\\wire_analysis\\output\\" + "test.json")
-    # beamfit = Beamfit()
-    # beamfit.test_fitting()
-
-
-    # Test using 1 sccm,  1500K
-    # run_name = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
-    # Make fit run dictionary
-    # # TODO Should this not rather be a class of its oown, so it can suggest its
-    # #  options?
-    # Solution for turnign class parameters into dict: 
-    # You need to filter out functions and built-in class attributes.
-
-    # >>> class A:
-    # ...     a = 3
-    # ...     b = 5
-    # ...     c = 6
-    # ... 
-    # >>> {key:value for key, value in A.__dict__.items() if not 
-    # key.startswith('__') and not callable(key)}
-    # {'a': 3, 'c': 6, 'b': 5}
-
-    # beamfit = Beamfit()
-    # print(beamfit.run_dict)
-
-
-    # run_dict = {}
-    # rd = run_dict
     
-    # run_dict["base_dir"] =  ("C:/Users/Christian/Documents/StudiumPhD/python/"
-    #                         + "Keysight-DMM-34461A/analysis/")
-    # run_dict["plot_dir"] = (run_dict["base_dir"] + os.sep 
-    #                         + "output/flow_on_off/")
-    # run_dict["sc_dir"] = (run_dict["base_dir"]
-    #                         + os.sep + "../" 
-    #                         + "SC_downloads/")
-                        
-    # run_dict["run_name"] = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
-    # run_dict["data_name"] = run_dict["run_name"]
-
-
-    # # requires flow_on_off_cycle_analysis_2
-    # # Which in turn  requires others, so we need to update the entire 
-    # # series to put them in the package
-
-    # rd["ext_dict_name"] = (rd["plot_dir"] + rd["run_name"] + os.sep 
-    #                         + "ext_dict")
-    # ext_dict = load_dict(rd["ext_dict_name"])
-
-    # result_dict_unsorted = make_result_dict(ext_dict)
-
-    # rd["z_list_unsorted"] = [-11, -6, -1.5,  1,  3.5,
-    #                 7, 12,  20,  -10, -5,
-    #                 -1, 1.5, 4, 8, 13, 
-    #                 18, -9, -4, -0.5, 2,
-    #                 4.5, 9, 14, 19, -8,
-    #                 -3, 0, 2.5, 5, 10,
-    #                 15, 17, -7, -2, 0.5,
-    #                 3, 6, 11, 16
-    #                 ] # rd can only contain jsonable items, 
-    # z_array_unsorted = np.array(rd["z_list_unsorted"])
-
-    # # Sort these:
-    # z_arr, result_dict = sort_by_z_list(z_array_unsorted,
-    #                                      result_dict_unsorted)
-
-    # P_arr = result_dict["p_arr"]
-    # P_err_arr = result_dict["p_err_arr"]
-
-    # rd["selection_indices"] = [3,100000,1] # 1e9 is simply larger than the list
-    # [a,b,c] = rd["selection_indices"]
-    # #neglegt leading selected points
-    # P_arr = P_arr[a:b:c]
-    # P_err_arr = P_err_arr[a:b:c]
-    # z_arr = z_arr[a:b:c]
-
-    # rd["fit_start"] = {
-    #     "l_eff" : 3.0,
-    #     "theta_max" : 24.2 * beamfit.degree,
-    #     "z0" : 1.51,
-    #     "A" : 0.02415, # motivated by fit
-    #     "P_0" : -0.10 # motivated by fit
-    # }
-    # rd["fit_start"]["A_bound"] = [rd["fit_start"]["A"] * 0.3,
-    #                               rd["fit_start"]["A"] * 3]
-
-    # import json
-    # out_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
-    #         + "output/")
-    # os.makedirs(out_dir, exist_ok=True)
-    # with open((out_dir + 'test.json'), 'w', encoding='utf-8') as f:
-    #     json.dump(rd, f, ensure_ascii=False, indent=4)
-
-    # with open((out_dir + 'test.json'), 'r', encoding='utf-8') as f:
-    #     rd_load = json.load(f)
-    # print(rd_load)
-
-    # # ########################
-    # # # Direct copy code from 
-    # # # HABS_beam_profile_fitting_4.1.1.1_cos3_low_temp_1sccm.ipynb
-    # # # to test functionality
-
-    # # beamfit = Beamfit()
-
-    # # # Define locations:
-    # # base_dir  = ("C:/Users/Christian/Documents/StudiumPhD/python/"
-    # #             + "Keysight-DMM-34461A/analysis/")
-    # # plot_dir = (base_dir + os.sep 
-    # #             + "output/flow_on_off/")
-
-    # # sc_dir = (base_dir
-    # #         + os.sep + "../" 
-    # #         + "SC_downloads/")
-
-    # # run_name = "2023-09-15_1sccm_475TC_z-scan_jf+hg_wire"
-    # # data_name = run_name
-    # # #data2_name = run_name + "Wire2"
-
-    # # ext_dict = load_dict(plot_dir + run_name + os.sep 
-    # #                             + "ext_dict")
-    # # result_dict_unsorted = make_result_dict(ext_dict)
-
-    # # #print(result_dict.items())
-
-    # # #TODO put z_list in results_dict iif applicable
-    # # z_list_unsorted = np.array( [-11, -6, -1.5,  1,  3.5,
-    # #                     7, 12,  20,  -10, -5,
-    # #                     -1, 1.5, 4, 8, 13, 
-    # #                     18, -9, -4, -0.5, 2,
-    # #                     4.5, 9, 14, 19, -8,
-    # #                     -3, 0, 2.5, 5, 10,
-    # #                     15, 17, -7, -2, 0.5,
-    # #                     3, 6, 11, 16
-    # #                     ])
-    # # # Sort these:
-    # # z_arr, result_dict = sort_by_z_list(z_list_unsorted, result_dict_unsorted)
-
-    # # P_arr = result_dict["p_arr"]
-    # # P_err_arr = result_dict["p_err_arr"]
-
-    # # #neglegt leading 3 points
-    # # P_arr = P_arr[3::]
-    # # P_err_arr = P_err_arr[3::]
-    # # z_arr = z_arr[3::]
-
-
-    # # # Starting Parameters
-    # # l_eff = 3.0
-    # # theta_max = 24.2 * beamfit.degree  # motivated loosely by HABS model, 
-    # #                         # adjusted to fit
-    # # z0 = 1.51
-    # # rescale = 1.25
-    # # A = 0.02415  # motivated by fit
-    # # print("A_start:", A)
-
-    # # A_low = A * 0.3
-    # # A_high = A * 3
-
-
-    # # P_0 = -0.10 # motivated by fit
-
-    # # ##### All parameters except theta_max
-    # # P_int_fit = lambda z_space, l_eff, A , z0, P_0: beamfit.P_int(
-    # #                 z_space, l_eff, theta_max, z0, A, P_0)
-
-    # # # Use errors as absolute to get proper error estimation
-    # # popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
-    # #                     sigma = P_err_arr,
-    # #                     absolute_sigma= False,
-    # #                     p0 = [l_eff, A,  z0, P_0], 
-    # #                     bounds=([2, A_low,  z0 - 1, P_0 - 0.1],
-    # #                             [20,  A_high,  z0 + 1, P_0 + 0.1])
-    # #                     )
-    # # ######
-
-    # # print(popt_abs, pcov_abs)
-    # # for i, p in enumerate(popt_abs):
-    # #     print(f"parameter {i:.0f}: {p:.5f}"
-    # #         +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
-
-    # # #### plot
-    # # z_space = np.linspace(-11,20,num=40)
-
-    # # P_space_eye= P_int_fit(z_space, *popt_abs)
-    # # P_arr_eye = P_int_fit(z_arr, *popt_abs)
-
-    # # # plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
-    # # #      , z_space,P_space_eye)
-    # # # plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
-    # # #      , z_space,P_space_eye, scale_residuals=True)
-
-    # # # Angle plot
-    # # plot_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
-    # #         + "output/")
-    # # os.makedirs(plot_dir, exist_ok=True)
-
-
-
-    # # beamfit.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
-    # #      , z_space,P_space_eye, scale_residuals=True, 
-    # #      plot_angles=True, z0=popt_abs[2], theta_max=theta_max/beamfit.degree,
-    # #      l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
-    # #                  + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
-    # #                  plotname = "test")
