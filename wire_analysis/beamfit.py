@@ -544,6 +544,66 @@ class Beamfit():
         self.save_json_run_dict(dict_path= self.run_dict_path, 
                             dict = self.run_dict)
 
+    def plot_data(self,
+                 P_arr, P_err_arr, z_arr,
+            # Name plot
+            plotname = "default_data",
+             ):
+
+        fig = plt.figure(0, figsize=(8,6.5), dpi =300)
+        ax1=plt.gca()
+        x_label = r"$z_{pos}$ [mm]"
+        ### ax1
+        ax1.errorbar(z_arr, P_arr,yerr = P_err_arr, fmt = ".",
+                    label = (r"data"))
+
+
+        ax1.set_ylabel(r"power [µW]")
+        ax1.set_xlabel(x_label)
+
+        ax1.grid(True)
+        ax1.legend(shadow=True, fontsize = 13)
+        # ax1.tight_layout()
+
+
+        fig.tight_layout()
+
+        format_im = 'png' #'pdf' or png
+        dpi = 300
+        plt.savefig(self.out_dir + plotname
+                    + '.{}'.format(format_im),
+                    format=format_im, dpi=dpi)
+        # plt.show()
+        ax1.cla()
+        fig.clf()
+        plt.close()
+        # Make sure there is always a copy of the analysis_run_dict.json saved
+        #  with the plot
+        # Save to file (saves additional  copy  to out_dir)
+        self.save_json_run_dict(dict_path= self.run_dict_path, 
+                            dict = self.run_dict)
+        return
+    
+    def default_plot_data(self,plotname= "data_plot"):
+        rd = self.run_dict
+        ######################################
+        # Load from newly reformatted result dict files
+        extractor_dict_unsorted = load_extractor_dict_json(
+                                rd["extractor_dict_path"])
+        # ##############
+        z_array_unsorted = np.array(rd["z_list_unsorted"])
+
+        # Sort these:
+        z_arr, extractor_dict = sort_by_z_list(z_array_unsorted,
+                                            extractor_dict_unsorted)
+
+        P_arr = extractor_dict["p_arr"]
+        P_err_arr = extractor_dict["p_err_arr"]
+        self.plot_data(P_arr = P_arr, 
+                       P_err_arr = P_err_arr, z_arr = z_arr,
+                       plotname = plotname)
+        return
+
     # HACK HACK HACK
     # make old pkl files loadable by loading them with old legacy code and 
     # extracting the  result_dict

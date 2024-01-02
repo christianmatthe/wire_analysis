@@ -1,0 +1,79 @@
+{
+    "out_dir_base": "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis\\scripts\\2023-12-18_no_cracking_H2\\output\\",
+    "analysis_run_name": "1sccm_475TC",
+    "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2023-09-15_1sccm_475TC_z-scan_jf+hg_wire\\extractor_dict.json",
+    "z_list_unsorted": [
+        -11,
+        -6,
+        -1.5,
+        1,
+        3.5,
+        7,
+        12,
+        20,
+        -10,
+        -5,
+        -1,
+        1.5,
+        4,
+        8,
+        13,
+        18,
+        -9,
+        -4,
+        -0.5,
+        2,
+        4.5,
+        9,
+        14,
+        19,
+        -8,
+        -3,
+        0,
+        2.5,
+        5,
+        10,
+        15,
+        17,
+        -7,
+        -2,
+        0.5,
+        3,
+        6,
+        11,
+        16
+    ],
+    "selection_indices": [
+        3,
+        100000,
+        1
+    ],
+    "fit_start": {
+        "l_eff": 3.0,
+        "theta_max": 0.4223696789826277,
+        "z0": 1.51,
+        "A": 0.02415,
+        "P_0": -0.1,
+        "y0": 35.17,
+        "A_bound": [
+            0.007245,
+            0.07245
+        ]
+    },
+    "fit_result": {
+        "l_eff": 2.9205209847857576,
+        "A": 0.03526442966896834,
+        "z0": 1.5385060795361052,
+        "P_0": -0.10611260491052235,
+        "theta_max": 0.4223696789826277,
+        "y0": 35.17
+    },
+    "fit_result_errors": {
+        "l_eff": 0.18298156820644845,
+        "A": 0.0009600525365132513,
+        "z0": 0.1110986506199056,
+        "P_0": 0.013614598350449635,
+        "theta_max": null,
+        "y0": null
+    }
+}

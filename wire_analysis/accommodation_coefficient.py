@@ -90,6 +90,15 @@ def predict_power_H2(T, x_lims = [-10, 10],
     return power_H2
 
 # TODO Function for trasnforming from PID setpoint to (estimated) temperature
+def TC_to_T_Hack(TC_val):
+    # Simply digitzed the PID Thermocouple to T plot in discourse at 2 points
+    # https://discourse.project8.org/t/mainz-habs-power-supply-tdk-lambda/291
+    Ts = [317.8571428571429, 2185.714285714286]
+    TCs = [51.111111111111114, 711.1111111111111]
+    m = (Ts[1] - Ts[0])/(TCs[1] - TCs[0])
+    b = Ts[0] - TCs[0] * m
+    T_val = m * TC_val + b
+    return T_val
 
 # Callculate accomodation coefficient
 # TODO include compensation for calibration "abberation" due to electric 
@@ -116,9 +125,9 @@ def calc_accomodation_coefficient(p_measured, T, x_lims = [-10, 10],
                 y0=  y0,
                 err = err,)
     effective_wire_eff  = p_measured/ power_H2
-    print("P_meas", p_measured * 1e6, "µW")
-    print("P_predict", power_H2 * 1e6, "µW")
-    print("effective_wire_eff", effective_wire_eff)
+    # print("P_meas", p_measured * 1e6, "µW")
+    # print("P_predict", power_H2 * 1e6, "µW")
+    # print("effective_wire_eff", effective_wire_eff)
 
 
 
