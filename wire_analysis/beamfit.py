@@ -400,6 +400,76 @@ class Beamfit():
                      + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
                      plotname = "default_fit_plot")
 
+    def custom_data_fit(self,z_arr, P_arr, P_err_arr, 
+                        plotname = "custom_data_fit_plot"
+                     ):
+        # Crude function for fitting a dataset not equal to the run dict data
+        # file. I suppose that really should not be the intended use case. 
+        # mmmmmmh
+        rd = self.run_dict
+        # ######################################
+        # # Load from newly reformatted result dict files
+        # extractor_dict_unsorted = load_extractor_dict_json(
+        #                         rd["extractor_dict_path"])
+        # # ##############
+        # z_array_unsorted = np.array(rd["z_list_unsorted"])
+
+        # # Sort these:
+        # z_arr, extractor_dict = sort_by_z_list(z_array_unsorted,
+        #                                     extractor_dict_unsorted)
+
+        # P_arr = extractor_dict["p_arr"]
+        # P_err_arr = extractor_dict["p_err_arr"]
+
+        [a,b,c] = rd["selection_indices"]
+        #neglegt leading selected points
+        P_arr = P_arr[a:b:c]
+        P_err_arr = P_err_arr[a:b:c]
+        z_arr = z_arr[a:b:c]
+
+        # initiate fit parameters
+        l_eff = rd["fit_start"]["l_eff"]
+        theta_max = rd["fit_start"]["theta_max"]
+        z0 = rd["fit_start"]["z0"]
+        A = rd["fit_start"]["A"]
+        P_0 = rd["fit_start"]["P_0"]
+        A_bound = rd["fit_start"]["A_bound"]
+        # ##### All parameters except theta_max
+        P_int_fit = lambda z_space, l_eff, A , z0, P_0: self.P_int(
+                        z_space, l_eff, theta_max, z0, A, P_0)
+
+        # Use errors as absolute to get proper error estimation
+        popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
+                            sigma = P_err_arr,
+                            absolute_sigma= False,
+                            p0 = [l_eff, A,  z0, P_0], 
+                            bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1],
+                                    [20,  A_bound[1],  z0 + 1, P_0 + 0.1])
+                            )
+        ######
+
+        print(popt_abs, pcov_abs)
+        for i, p in enumerate(popt_abs):
+            print(f"parameter {i:.0f}: {p:.5f}"
+                +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
+        # save to file
+        self.save_fit_results(popt_abs, pcov_abs)
+            
+        #### plot
+        z_space = np.linspace(-11,20,num=100)
+
+        P_space_eye= P_int_fit(z_space, *popt_abs)
+        P_arr_eye = P_int_fit(z_arr, *popt_abs)
+
+        # Angle plot
+        self.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+            , z_space,P_space_eye, scale_residuals=True, 
+            plot_angles=True, z0=popt_abs[2],
+            theta_max=theta_max/self.degree,
+            l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
+                     + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
+                     plotname = plotname)
+
 
     #define plottign function:
     # TODO Rework: its just a straight copy for now
