@@ -399,8 +399,9 @@ class Beamfit():
             l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
                      + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
                      plotname = "default_fit_plot")
+        return
 
-    def custom_data_fit(self,z_arr, P_arr, P_err_arr, 
+    def custom_data_fit(self,z_arr, p_arr, p_err_arr, 
                         plotname = "custom_data_fit_plot"
                      ):
         # Crude function for fitting a dataset not equal to the run dict data
@@ -411,15 +412,19 @@ class Beamfit():
         # # Load from newly reformatted result dict files
         # extractor_dict_unsorted = load_extractor_dict_json(
         #                         rd["extractor_dict_path"])
-        # # ##############
-        # z_array_unsorted = np.array(rd["z_list_unsorted"])
+        # HACK brew up an equivalently formated dict:
+        sort_this_dict = {} 
+        sort_this_dict["p_arr"] = p_arr 
+        sort_this_dict["p_err_arr"] = p_err_arr 
+        # ##############
+        z_array_unsorted = z_arr
 
-        # # Sort these:
-        # z_arr, extractor_dict = sort_by_z_list(z_array_unsorted,
-        #                                     extractor_dict_unsorted)
+        # Sort these:
+        z_arr, sorted_dict = sort_by_z_list(z_array_unsorted,
+                                            sort_this_dict)
 
-        # P_arr = extractor_dict["p_arr"]
-        # P_err_arr = extractor_dict["p_err_arr"]
+        P_arr = sorted_dict["p_arr"]
+        P_err_arr = sorted_dict["p_err_arr"]
 
         [a,b,c] = rd["selection_indices"]
         #neglegt leading selected points
@@ -469,6 +474,7 @@ class Beamfit():
             l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
                      + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
                      plotname = plotname)
+        return
 
 
     #define plottign function:

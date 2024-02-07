@@ -230,140 +230,70 @@ z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst = th
 # also referencing https://pubs.acs.org/doi/epdf/10.1021/j100801a014
 # y',the recombination coefficient defined as the fraction of incident 
 # atoms which recombine,
-print("p_excess_err_lst" ,p_excess_err_lst )
 
-# plot p_excess_lst
-# Start plot:
-plotname = "excess_power_basic"
-fig = plt.figure(0, figsize=(8,6.5), dpi =300)
-ax1=plt.gca()
-x_label = r"$z_{pos}$ [mm]"
-ax1.errorbar(z_lst, p_excess_lst,yerr = p_excess_err_lst, fmt = ".",
-                #label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K")
-                )
-# ax1.scatter(z_lst, p_excess_lst, #fmt = ".",
-#                 #label = "excess power"
+# # plot p_excess_lst
+# # Start plot:
+# plotname = "excess_power_basic"
+# fig = plt.figure(0, figsize=(8,6.5), dpi =300)
+# ax1=plt.gca()
+# x_label = r"$z_{pos}$ [mm]"
+# ax1.errorbar(z_lst, p_excess_lst,yerr = p_excess_err_lst, fmt = ".",
+#                 #label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K")
 #                 )
+# # ax1.scatter(z_lst, p_excess_lst, #fmt = ".",
+# #                 #label = "excess power"
+# #                 )
 
 
-ax1.set_ylabel(r"excess power [µW]")
-ax1.set_xlabel(x_label)
+# ax1.set_ylabel(r"excess power [µW]")
+# ax1.set_xlabel(x_label)
 
-ax1.grid(True)
-ax1.legend(shadow=True, fontsize = 13)
-# ax1.tight_layout()
-
-
-fig.tight_layout()
-
-format_im = 'png' #'pdf' or png
-dpi = 300
-plt.savefig(out_dir + plotname
-            + '.{}'.format(format_im),
-            format=format_im, dpi=dpi)
-# plt.show()
-ax1.cla()
-fig.clf()
-plt.close()
-
-# plot ceb_lst
-# Start plot:
-plotname = "CEB_plot"
-fig = plt.figure(0, figsize=(8,6.5), dpi =300)
-ax1=plt.gca()
-x_label = r"$z_{pos}$ [mm]"
-# ax1.errorbar(pd["z_arr"], pd["p_arr"],yerr = pd["p_err_arr"], fmt = ".",
-#                 label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K"))
-# ax1.scatter(z_lst, ceb_lst, #fmt = ".",
-#                 label = "ac_H = 1" + r",$\gamma = 1$"
-#                 )
-ax1.errorbar(z_lst, ceb_lst, fmt = ".", yerr = ceb_err_lst,
-                label = "ac_H = 1" + r",$\gamma = 1$"
-                )
-
-ax1.set_ylabel(r"dissociation Efficiency (estimate)")
-ax1.set_xlabel(x_label)
-
-ax1.grid(True)
-ax1.legend(shadow=True, fontsize = 13)
-# ax1.tight_layout()
+# ax1.grid(True)
+# ax1.legend(shadow=True, fontsize = 13)
+# # ax1.tight_layout()
 
 
-fig.tight_layout()
+# fig.tight_layout()
 
-format_im = 'png' #'pdf' or png
-dpi = 300
-plt.savefig(out_dir + plotname
-            + '.{}'.format(format_im),
-            format=format_im, dpi=dpi)
-# Now plotalternate setting sinsame graph
-ax1.errorbar(z_lst, ceb_lst_ac_H_lit, fmt = ".",yerr = ceb_err_lst_ac_H_lit,
-                label = "ac_H = 0.65" + r",$\gamma = 0.03$"
-                )
-ax1.legend(shadow=True, fontsize = 13)
-plt.savefig(out_dir + plotname + "_compare"
-            + '.{}'.format(format_im),
-            format=format_im, dpi=dpi)
-# plt.show()
-ax1.cla()
-fig.clf()
-plt.close()
+# format_im = 'png' #'pdf' or png
+# dpi = 300
+# plt.savefig(out_dir + plotname
+#             + '.{}'.format(format_im),
+#             format=format_im, dpi=dpi)
+# # plt.show()
+# ax1.cla()
+# fig.clf()
+# plt.close()
+###################### Previous is reuse of old code to get p_excess
 
+# Plot all the 1sccm runs in one plot
+# Need to add run dicts for 0A and 720TC
+# Use 0A: 2023-12-22_1sccm_0A_z-scan_jf+hg_wire
+# 720TC: 2023-04-21_1sccm_15A_TC_z-scan_jf_wire
 
-# plot ceb_lst
-# Start plot:
-plotname = "CEB_plot_spread"
-fig = plt.figure(0, figsize=(8,6.5), dpi =300)
-ax1=plt.gca()
-x_label = r"$z_{pos}$ [mm]"
-# ax1.errorbar(pd["z_arr"], pd["p_arr"],yerr = pd["p_err_arr"], fmt = ".",
-#                 label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K"))
-ax1.scatter(z_lst, ceb_lst, #fmt = ".",
-                label = "ac_H = 1" + r",$\gamma = 1$"
-                )
-ax1.scatter(z_lst, ceb_lst_ac_H_lit, #fmt = ".",
-                label = "ac_H = 0.65" + r",$\gamma = 0.03$"
-                )
-# maximize CEB: 0.65+-0.2, 0.03+-0.01
-ac_H = 0.45
-gamma_H = 0.01
-z_lst, ceb_lst_ac_H_lit, ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst  = three_point_CEB(
-    pd_dict["0A"],pd_dict["390TC"],pd_dict["720TC"],ac_H=ac_H, gamma_H=gamma_H)
-ax1.scatter(z_lst, ceb_lst_ac_H_lit, #fmt = ".",
-                label = (f"ac_H = {ac_H:.2f}" + r",$\gamma =$" 
-                         + f"{gamma_H:.2f}")
-                )
-# minimize CEB: 0.65+-0.2, 0.03+-0.01
-ac_H = 0.85
-gamma_H = 0.05
-z_lst, ceb_lst_ac_H_lit, ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst = three_point_CEB(
-    pd_dict["0A"],pd_dict["390TC"],pd_dict["720TC"],ac_H=ac_H, gamma_H=gamma_H)
-ax1.scatter(z_lst, ceb_lst_ac_H_lit, #fmt = ".",
-                label = (f"ac_H = {ac_H:.2f}" + r",$\gamma =$" 
-                         + f"{gamma_H:.2f}")
-                )
+filename = "1sccm_720TC_excess_power.json"
+beamfit = wa.Beamfit(
+    run_dict_path = work_dir + filename)
+# HACK to change out dir without editing the files
+# TODO If you do this implement feature to retroactively change out_dir in
+# run_dict
+############### TODO Implement as base function
+name, file_extension = os.path.splitext(filename)
+beamfit.run_dict["out_dir_base"] = os.path.abspath("./output/") + os.sep 
+beamfit.out_dir = beamfit.run_dict["out_dir_base"] + name + os.sep
+os.makedirs(beamfit.out_dir, exist_ok=True)
+beamfit.save_json_run_dict()
+############### END TODO
 
+print("p_excess_lst", p_excess_lst)
+print()
 
-ax1.set_ylabel(r"dissociation Efficiency (estimate)")
-ax1.set_xlabel(x_label)
-
-ax1.grid(True)
-ax1.legend(shadow=True, fontsize = 13)
-# ax1.tight_layout()
-
-
-fig.tight_layout()
-
-format_im = 'png' #'pdf' or png
-dpi = 300
-plt.savefig(out_dir + plotname
-            + '.{}'.format(format_im),
-            format=format_im, dpi=dpi)
-# plt.show()
-ax1.cla()
-fig.clf()
-plt.close()
-
+print("default fit wait ~1min")
+beamfit.default_fit()
+print("custom fit wait ~1min")
+beamfit.custom_data_fit(z_arr=np.asarray(z_lst), p_arr=np.array(p_excess_lst)
+                        , p_err_arr = np.array(p_excess_err_lst)
+                        )
 
 
 
