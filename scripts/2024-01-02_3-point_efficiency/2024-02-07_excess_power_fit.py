@@ -221,6 +221,27 @@ def three_point_CEB(low_pd, mid_pd, high_pd, ac_H = 1, gamma_H = 1):
 
     return z_lst,ceb_lst,ceb_err_lst, p_excess_lst,p_excess_err_lst,
 
+
+def background_subtract_p(low_pd, high_pd):
+    #very basic background subtractionn without temperature axis alignment
+    # align data on z-axis (of most sparese data set)
+    z_lst = []
+    p_excess_lst = []
+    p_excess_err_lst = []
+    for i,z in enumerate(high_pd["z_arr"]):
+        if (z in low_pd["z_arr"]):
+            i_low = np.where(low_pd["z_arr"] == z)
+            z_lst.append(z)
+
+            #Calculate excess power at high T
+            p_excess = high_pd["p_arr"][i] - low_pd["p_arr"][i_low]
+            p_excess_lst.append(p_excess)
+            p_excess_err = np.sqrt(high_pd["p_err_arr"][i]**2
+                            + low_pd["p_err_arr"][i_low]**2
+                            )
+            p_excess_err_lst.append(p_excess_err)
+    return z_lst, p_excess_lst,p_excess_err_lst
+
 z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst = three_point_CEB(
     pd_dict["0A"],pd_dict["390TC"],pd_dict["720TC"])
 z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst = three_point_CEB(
@@ -271,7 +292,43 @@ z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst = th
 # Use 0A: 2023-12-22_1sccm_0A_z-scan_jf+hg_wire
 # 720TC: 2023-04-21_1sccm_15A_TC_z-scan_jf_wire
 
-filename = "1sccm_720TC_excess_power.json"
+# ####################################
+# filename = "1sccm_720TC_excess_power.json"
+# beamfit = wa.Beamfit(
+#     run_dict_path = work_dir + filename)
+# # HACK to change out dir without editing the files
+# # TODO If you do this implement feature to retroactively change out_dir in
+# # run_dict
+# ############### TODO Implement as base function
+# name, file_extension = os.path.splitext(filename)
+# beamfit.run_dict["out_dir_base"] = os.path.abspath("./output/") + os.sep 
+# beamfit.out_dir = beamfit.run_dict["out_dir_base"] + name + os.sep
+# os.makedirs(beamfit.out_dir, exist_ok=True)
+# beamfit.save_json_run_dict()
+# ############### END TODO
+
+# print("p_excess_lst", p_excess_lst)
+# print("p_arr=np.array(p_excess_lst)", np.array(p_excess_lst).flatten())
+
+# print("default fit wait ~1min")
+# beamfit.default_fit()
+# beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
+#                            + "default_fit_"+  filename)
+# print("custom fit wait ~1min")
+# beamfit.custom_data_fit(z_arr=np.asarray(z_lst).flatten(),
+#                          p_arr=np.array(p_excess_lst).flatten()
+#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
+#                         )
+# ########################################
+
+################################
+# Do background  subtracted fit for 1250K
+# Calculate different excess lists
+z_lst, p_excess_lst,p_excess_err_lst = background_subtract_p(
+    pd_dict["0A"],pd_dict["390TC"])
+
+#fit and plot
+filename = "1sccm_390TC_excess_power.json"
 beamfit = wa.Beamfit(
     run_dict_path = work_dir + filename)
 # HACK to change out dir without editing the files
@@ -286,15 +343,31 @@ beamfit.save_json_run_dict()
 ############### END TODO
 
 print("p_excess_lst", p_excess_lst)
-print()
+print("p_arr=np.array(p_excess_lst)", np.array(p_excess_lst).flatten())
 
-print("default fit wait ~1min")
-beamfit.default_fit()
-print("custom fit wait ~1min")
-beamfit.custom_data_fit(z_arr=np.asarray(z_lst), p_arr=np.array(p_excess_lst)
-                        , p_err_arr = np.array(p_excess_err_lst)
+# print("default fit wait ~1min")
+# beamfit.default_fit()
+# beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
+#                            + "default_fit_"+  filename)
+print("custom penumbra fit wait ~??min")
+beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
+                         p_arr=np.array(p_excess_lst).flatten()
+                        , p_err_arr = np.array(p_excess_err_lst).flatten()
                         )
+beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
+                           + "penumbra_fit_"+  filename)
 
+print("custom fit wait ~1min")
+beamfit.custom_data_fit(z_arr=np.asarray(z_lst).flatten(),
+                         p_arr=np.array(p_excess_lst).flatten()
+                        , p_err_arr = np.array(p_excess_err_lst).flatten()
+                        )
+print("custom penumbra fit wait ~??min")
+beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
+                         p_arr=np.array(p_excess_lst).flatten()
+                        , p_err_arr = np.array(p_excess_err_lst).flatten()
+                        )
+##############################
 
 
 

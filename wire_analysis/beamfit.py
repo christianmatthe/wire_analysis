@@ -259,6 +259,78 @@ class Beamfit():
         return A * result + P_0
     
 
+    def visible_fraction(self, theta):
+        # HACK the current implementation is merely an approximation
+        # Approximates visible capillary fraction as a straight line passing
+        # over a circle
+        # and linearly interpolates the angles within the penumbra
+
+        # calculate fraction of the capillary that is visible under a
+        # given angle
+        # Presumes capillary to be centered on openning  in HABS housing
+        # radius_cap = 0.5 # mm
+        # distance_cap_housing = 7.1 # mm
+        # radius_housing = 3.0 # mm
+
+        # # calculate edges of penumbra
+        # # inner (close) edge
+        # theta_inner = np.arctan((radius_housing - radius_cap)
+        #                         /distance_cap_housing)
+        # theta_outer = np.arctan((radius_housing + radius_cap)
+        #                         /distance_cap_housing)
+
+        # print("inner edge:", theta_inner, theta_inner / degree)
+        # print("outer edge:", theta_outer, theta_outer / degree)#
+        # speed up by eliminating  this calculation
+        theta_inner = 0.3385556949116842 # 19.3978 deg 
+        theta_outer = 0.45799795159722173 # 26.2413 deg
+        if np.abs(theta) <= theta_inner:
+            fraction = 1
+        elif np.abs(theta) >= theta_outer:
+            fraction = 0
+        else:
+            # Take shortcut initially
+            # HACK Linearly interpolate between inner and outer angles
+            int_var = (2 *  ((theta_outer - np.abs(theta)) 
+                        / (theta_outer - theta_inner))) - 1
+            # Integrated circle equation
+            vis_frac = lambda x: (np.sqrt(1-x**2) * x 
+                                    + np.arcsin(x)
+                                    + np.pi/2)/np.pi
+            fraction = vis_frac(int_var)
+        return fraction
+
+    def P_int_penumbra(self,
+              z_pos, l_eff, theta_max, z0, A, P_0,
+              y0 = None, # Set to constant for simplicity 
+              eta = None
+                     ):
+        # Attempt to model that the Capillary gets obscured by its housing 
+        # in parts and not all at once
+        if eta is None:
+            eta = self.eta_wire_default
+        if y0 is None:
+            y0 = self.y0_default
+
+        # Edit of P_int_fast_array with selectabel eta
+        z_space = z_pos
+        result = np.zeros_like(z_space)
+        for i,z_pos in enumerate(z_space): 
+            def theta(lw):
+                return np.arctan(np.sqrt(lw ** 2 + (z_pos - z0) ** 2) / y0)
+            integrant = lambda lw: ((self.beam_profile(theta(lw), l_eff, 
+                                                       theta_max) 
+                                    * np.cos(theta(lw))**3) 
+                                    # apply "visible capillary fraction"
+                                    * self.visible_fraction(theta(lw))
+                                    # Multiply by eta_wire
+                                    * eta(lw)
+                                            )   
+            result[i] = integrate.quad(integrant, -10, 10,
+                                epsabs=1e-1, epsrel=1e-1)[0]
+        return A * result + P_0
+    
+
     # define dual fit 
     def P_int_2_component(self,
                         z_pos, l_eff, theta_max, z0, A, P_0,
@@ -441,6 +513,81 @@ class Beamfit():
         A_bound = rd["fit_start"]["A_bound"]
         # ##### All parameters except theta_max
         P_int_fit = lambda z_space, l_eff, A , z0, P_0: self.P_int(
+                        z_space, l_eff, theta_max, z0, A, P_0)
+
+        # Use errors as absolute to get proper error estimation
+        popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
+                            sigma = P_err_arr,
+                            absolute_sigma= False,
+                            p0 = [l_eff, A,  z0, P_0], 
+                            bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1],
+                                    [20,  A_bound[1],  z0 + 1, P_0 + 0.1])
+                            )
+        ######
+
+        print(popt_abs, pcov_abs)
+        for i, p in enumerate(popt_abs):
+            print(f"parameter {i:.0f}: {p:.5f}"
+                +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
+        # save to file
+        self.save_fit_results(popt_abs, pcov_abs)
+            
+        #### plot
+        z_space = np.linspace(-11,20,num=100)
+
+        P_space_eye= P_int_fit(z_space, *popt_abs)
+        P_arr_eye = P_int_fit(z_arr, *popt_abs)
+
+        # Angle plot
+        self.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+            , z_space,P_space_eye, scale_residuals=True, 
+            plot_angles=True, z0=popt_abs[2],
+            theta_max=theta_max/self.degree,
+            l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
+                     + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
+                     plotname = plotname)
+        return
+    
+def custom_fit(self,z_arr, p_arr, p_err_arr, 
+                        plotname = "custom_fit_plot"
+                     ):
+        # Crude function for fitting a dataset not equal to the run dict data
+        # file. I suppose that really should not be the intended use case. 
+        # mmmmmmh
+        rd = self.run_dict
+        # ######################################
+        # # Load from newly reformatted result dict files
+        # extractor_dict_unsorted = load_extractor_dict_json(
+        #                         rd["extractor_dict_path"])
+        # HACK brew up an equivalently formated dict:
+        sort_this_dict = {} 
+        sort_this_dict["p_arr"] = p_arr 
+        sort_this_dict["p_err_arr"] = p_err_arr 
+        # ##############
+        z_array_unsorted = z_arr
+
+        # Sort these:
+        z_arr, sorted_dict = sort_by_z_list(z_array_unsorted,
+                                            sort_this_dict)
+
+        P_arr = sorted_dict["p_arr"]
+        P_err_arr = sorted_dict["p_err_arr"]
+
+        [a,b,c] = rd["selection_indices"]
+        #neglegt leading selected points
+        P_arr = P_arr[a:b:c]
+        P_err_arr = P_err_arr[a:b:c]
+        z_arr = z_arr[a:b:c]
+
+        # initiate fit parameters
+        l_eff = rd["fit_start"]["l_eff"]
+        theta_max = rd["fit_start"]["theta_max"]
+        z0 = rd["fit_start"]["z0"]
+        A = rd["fit_start"]["A"]
+        P_0 = rd["fit_start"]["P_0"]
+        A_bound = rd["fit_start"]["A_bound"]
+        # ##### All parameters except theta_max
+        P_int_fit = lambda z_space, l_eff, A , z0, P_0: self.P_int_penumbra(
                         z_space, l_eff, theta_max, z0, A, P_0)
 
         # Use errors as absolute to get proper error estimation
