@@ -548,7 +548,7 @@ class Beamfit():
                      plotname = plotname)
         return
     
-def custom_fit(self,z_arr, p_arr, p_err_arr, 
+    def custom_fit(self,z_arr, p_arr, p_err_arr, 
                         plotname = "custom_fit_plot"
                      ):
         # Crude function for fitting a dataset not equal to the run dict data
