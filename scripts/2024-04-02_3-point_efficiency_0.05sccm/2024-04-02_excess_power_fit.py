@@ -24,10 +24,6 @@ mpl.rc('font', **font)
 work_dir = "./run_dicts/"
 out_dir = "./output/"
 
-# Plot all the 1sccm runs in one plot
-# Need to add run dicts for 0A and 720TC
-# Use 0A: 2023-12-22_1sccm_0A_z-scan_jf+hg_wire
-# 720TC: 2023-04-21_1sccm_15A_TC_z-scan_jf_wire
 
 
 # for filename in os.listdir(work_dir):
@@ -74,12 +70,12 @@ def p_data_plot_dict(filename):
 
 # plot data into shared plot   
 #######
-# TC_lst = [200, 300, 390, 475]
-indicator_list = ["720TC", "475TC", "390TC", "300TC","200TC",  "0A"]
-filename_list = ["1sccm_" + indicator + ".json" 
+indicator_list = ["715TC","390TC", "0A"]
+filename_list = ["005sccm_" + indicator + ".json" 
                  for indicator in indicator_list]
 # for TC_lst 44 is a HACK for 0 A ("room temp" =  44 = 297.7K)
-TC_lst = [720, 475, 390, 300, 200, 44] 
+#TC_lst = [715, 475, 390, 300, 200, 44] 
+TC_lst = [715, 390, 44] 
 T_lst = [TC_to_T_Hack(TC) for TC in TC_lst]
 pd_dict = {}
 # Start plot:
@@ -243,9 +239,9 @@ def background_subtract_p(low_pd, high_pd):
     return z_lst, p_excess_lst,p_excess_err_lst
 
 z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst = three_point_CEB(
-    pd_dict["0A"],pd_dict["390TC"],pd_dict["720TC"])
+    pd_dict["0A"],pd_dict["390TC"],pd_dict["715TC"])
 z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst = three_point_CEB(
-    pd_dict["0A"],pd_dict["390TC"],pd_dict["720TC"],ac_H=0.65, gamma_H=0.03)
+    pd_dict["0A"],pd_dict["390TC"],pd_dict["715TC"],ac_H=0.65, gamma_H=0.03)
 #ac_H lit from https://doi.org/10.1039/TF9716702711
 # Need to do some work with  this source verifiying it means what I think TODO
 # also referencing https://pubs.acs.org/doi/epdf/10.1021/j100801a014
@@ -321,7 +317,7 @@ z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst = th
 #                         )
 # ########################################
 ####################################
-filename = "1sccm_720TC_penumbra.json"
+filename = "005sccm_715TC_penumbra.json"
 beamfit = wa.Beamfit(
     run_dict_path = work_dir + filename)
 # HACK to change out dir without editing the files
@@ -343,15 +339,15 @@ beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
                          p_arr=np.array(p_excess_lst).flatten()
                         , p_err_arr = np.array(p_excess_err_lst).flatten()
                         )
-print("default fit wait ~1min")
-beamfit.default_fit()
-beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
-                           + "default_fit_"+  filename)
-print("custom fit wait ~1min")
-beamfit.custom_data_fit(z_arr=np.asarray(z_lst).flatten(),
-                         p_arr=np.array(p_excess_lst).flatten()
-                        , p_err_arr = np.array(p_excess_err_lst).flatten()
-                        )
+# print("default fit wait ~1min")
+# beamfit.default_fit()
+# beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
+#                            + "default_fit_"+  filename)
+# print("custom fit wait ~1min")
+# beamfit.custom_data_fit(z_arr=np.asarray(z_lst).flatten(),
+#                          p_arr=np.array(p_excess_lst).flatten()
+#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
+#                         )
 ########################################
 
 # ################################

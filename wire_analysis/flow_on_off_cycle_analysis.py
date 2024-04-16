@@ -1106,7 +1106,7 @@ Parameters
                                     "virtual_eq_series": v_eq_series,
                                     "method": "lin_exp",
         }
-        return self.lin_exp_ABA_fit_dict
+        return selquad_ABA_fit_dictf.lin_exp_ABA_fit_dict
 
 
     def basic_ABA_fit_all_B(self,
@@ -1425,11 +1425,18 @@ Parameters
         values = np.array([dic[i]["popt"][-1] for i  in dic.keys()])
         errors = np.array([dic[i]["perr"][-1] for i  in dic.keys()])
         res = self.weighted_mean_calculation(values, errors)
+        # HACK add c0 parameter (resistance) (for calibration base line)
+        c0_values = np.array([dic[i]["popt"][0] for i  in dic.keys()])
+        c0_errors = np.array([dic[i]["perr"][0] for i  in dic.keys()])
+        res_c0 = self.weighted_mean_calculation(c0_values, c0_errors)
         keys = ["values", "errors", "mean", "std",
                  "w_mean", "w_std", "std_of_mean",
-                 "w_mean_clipped","w_std_clipped"]
+                 "w_mean_clipped","w_std_clipped",
+                 "c0_w_mean", "c0_w_std"]
+        # TODO Q: shoudl the error not be the std_of_mean
         vals = [values, errors, res[0], res[1], res[2], res[3], res[4],
-                res[5], res[6]]
+                res[5], res[6],
+                res_c0[3], c0_errors[4]]
         print([(keys[i] + ": ", f"{vals[i]:.3e}") for i in range(2,len(keys))])
         self.fit_results[dic[0]["method"]] = {}
         for i,key in enumerate(keys):
@@ -1955,6 +1962,25 @@ def fudge_power_per_sccm_plot(data_sets, plot_path, T_lst= [295,1310,2350],
 
 ###########
 ############defudging
+def calib_factor(r_base):
+    # HACK HACK HACK
+    #popt from "calib_analysis" based on 2023-01-09_long_calib
+    popt = [-4.02271476e-10,  8.90056085e-08, -1.09041548e-06,  1.37890429e-01,
+    6.70824014e+01]
+
+    r_from_p = lambda p: np.poly1d([*popt])(p) # p un µW
+    k_from_deriv = lambda p: 1/(np.poly1d([*popt]).deriv()(p))
+    # Goal is to make an inverse function that yields p_from_r
+    from scipy.interpolate import interp1d
+    p_space = np.linspace(0,300,301)
+    r_space = r_from_p(p_space)
+
+    p_from_r = lambda r: interp1d(r_space,p_space)(r)
+    k = k_from_deriv(p_from_r(r_base))
+    # reduce k by 1 µW/Ohm to eliminate self heating factor
+    calib = k - 1
+    return calib
+
 def make_result_dict(ext_dict):
         v_mean_arr = np.array(
                     [val["extractor"].fit_results["quad"]["w_mean"] 
@@ -1965,12 +1991,20 @@ def make_result_dict(ext_dict):
                     for val in ext_dict.values()]
                     )
         #print("v_mean_arr", v_mean_arr)
-        µW_per_ohm = 7.4 * 1000 - 1 * 1000 
+        µW_per_ohm = 7.4 * 1000 - 1 * 1000
+        # HACK 2024-04-16 Introduce recalibration based on base temperature of
+        # wire
+        r0_arr = np.array(
+                    [val["extractor"].fit_results["quad"]["c0_w_mean"] 
+                    for val in ext_dict.values()]
+                    )
+        µW_per_ohm = calib_factor(r0_arr)
         p_arr = µW_per_ohm * v_mean_arr
         p_err_arr = µW_per_ohm * v_err_arr
         result_dict = {}
-        result_dict["µW_per_ohm"] = np.array([µW_per_ohm 
-                                              for i in range(len(v_mean_arr))])
+        # result_dict["µW_per_ohm"] = np.array([µW_per_ohm 
+        #                                  for i in range(len(v_mean_arr))])
+        result_dict["µW_per_ohm"] = µW_per_ohm
         result_dict["v_mean_arr"] = v_mean_arr
         result_dict["v_err_arr"] = v_err_arr
         result_dict["p_arr"] = p_arr

@@ -30,20 +30,20 @@ out_dir = "./output/"
 # 720TC: 2023-04-21_1sccm_15A_TC_z-scan_jf_wire
 
 
-# for filename in os.listdir(work_dir):
-#     print("filename:", filename)
-#     beamfit = wa.Beamfit(
-#         run_dict_path = work_dir + filename)
-#     # HACK to change out dir without editing the files
-#     # TODO If you do this implement feature to retroactively change out_dir in
-#     # run_dict
-#     ############### TODO Implement as base function
-#     name, file_extension = os.path.splitext(filename)
-#     beamfit.run_dict["out_dir_base"] = os.path.abspath("./output/") + os.sep 
-#     beamfit.out_dir = beamfit.run_dict["out_dir_base"] + name + os.sep
-#     os.makedirs(beamfit.out_dir, exist_ok=True)
-#     beamfit.save_json_run_dict()
-#     ############### END TODO
+for filename in os.listdir(work_dir):
+    print("filename:", filename)
+    beamfit = wa.Beamfit(
+        run_dict_path = work_dir + filename)
+    # HACK to change out dir without editing the files
+    # TODO If you do this implement feature to retroactively change out_dir in
+    # run_dict
+    ############### TODO Implement as base function
+    name, file_extension = os.path.splitext(filename)
+    beamfit.run_dict["out_dir_base"] = os.path.abspath("./output/") + os.sep 
+    beamfit.out_dir = beamfit.run_dict["out_dir_base"] + name + os.sep
+    os.makedirs(beamfit.out_dir, exist_ok=True)
+    beamfit.save_json_run_dict()
+    ############### END TODO
 
 
 #     beamfit.default_plot_data()

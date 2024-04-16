@@ -1,7 +1,7 @@
 {
-    "out_dir_base": "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis\\scripts\\2024-01-02_3-point_efficiency\\output\\",
-    "analysis_run_name": "1sccm_390TC_excess_power",
-    "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2023-09-29_1sccm_390TC_z-scan_jf+hg_wire\\extractor_dict.json",
+    "out_dir_base": "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis\\scripts\\2024-04-02_3-point_efficiency_0.05sccm\\output\\",
+    "analysis_run_name": "005sccm_715TC_penumbra",
+    "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2023-05-16_005sccm_15A_TC_z-scan_jf+hg_wire\\extractor_dict.json",
     "z_list_unsorted": [
         -11,
         -6,
@@ -44,35 +44,35 @@
         16
     ],
     "selection_indices": [
-        3,
+        11,
         100000,
         1
     ],
     "fit_start": {
-        "l_eff": 2.5,
+        "l_eff": 4.1,
         "theta_max": 0.45799795159722173,
         "z0": 1.51,
-        "A": 0.02415,
-        "P_0": 0.06,
+        "A": 0.07,
+        "P_0": -0.0,
         "y0": 35.17,
         "A_bound": [
             0.007245,
-            0.07245
+            0.2
         ]
     },
     "fit_result": {
-        "l_eff": 2.3792632183666877,
-        "A": 0.026695229097871115,
-        "z0": 0.9539128577954511,
-        "P_0": 0.06027084977208591,
+        "l_eff": 7.996366292173551,
+        "A": 0.03446659427237534,
+        "z0": 1.6761071175775681,
+        "P_0": 0.003023723386268467,
         "theta_max": 0.45799795159722173,
         "y0": 35.17
     },
     "fit_result_errors": {
-        "l_eff": 0.0963837679707858,
-        "A": 0.00040822819581189817,
-        "z0": 0.10940422640191398,
-        "P_0": 0.005150558279483225,
+        "l_eff": 0.9327101748849623,
+        "A": 0.002333228764311176,
+        "z0": 0.16238320335985154,
+        "P_0": 0.005150827328230766,
         "theta_max": null,
         "y0": null
     }
