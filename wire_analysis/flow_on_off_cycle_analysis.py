@@ -2001,8 +2001,8 @@ def make_result_dict(ext_dict):
                     [val["extractor"].fit_results["quad"]["w_std"] 
                     for val in ext_dict.values()]
                     )
-        #print("v_mean_arr", v_mean_arr)
-        µW_per_ohm = 7.4 * 1000 - 1 * 1000
+        # #print("v_mean_arr", v_mean_arr)
+        # µW_per_ohm = 7.4 * 1000 - 1 * 1000
         # HACK 2024-04-16 Introduce recalibration based on base temperature of
         # wire
         r0_arr = np.array(
@@ -2010,8 +2010,8 @@ def make_result_dict(ext_dict):
                     for val in ext_dict.values()]
                     ) * 1000
         µW_per_ohm = calib_factor(r0_arr)
-        p_arr = µW_per_ohm * v_mean_arr
-        p_err_arr = µW_per_ohm * v_err_arr
+        p_arr = µW_per_ohm * 1000 * v_mean_arr
+        p_err_arr = µW_per_ohm * 1000* v_err_arr
         result_dict = {}
         # result_dict["µW_per_ohm"] = np.array([µW_per_ohm 
         #                                  for i in range(len(v_mean_arr))])
