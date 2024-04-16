@@ -29,10 +29,11 @@ font = {#'family' : 'normal','weight' : 'bold',
         }
 mpl.rc('font', **font)
 
-plot_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
-            + "output/flow_on_off/")
-data_dir = os.path.dirname(os.path.abspath(__file__)) + os.sep + "data/"
-os.makedirs(plot_dir, exist_ok=True)
+# DEPRECATED
+# plot_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
+#             + "output/flow_on_off/")
+# data_dir = os.path.dirname(os.path.abspath(__file__)) + os.sep + "data/"
+# os.makedirs(plot_dir, exist_ok=True)
 #######################
 
 def date_picker(date_list, start_date, end_date):
@@ -51,459 +52,459 @@ def make_index_chunks(data_dict, start_date, time_interval, n_cycles):
             chunk_dict[f"{i}"][state] = date_indices
     return chunk_dict
 
-def plot_colored(data_dict, chunk_dict, plotname):
+# def plot_colored(data_dict, chunk_dict, plotname):
 
-    fig = plt.figure(0, figsize=(8,6.5))
-    ax1=plt.gca()
-    for i,key in enumerate(chunk_dict.keys()):
-        # labels = ["off", "on"]
-        # if i < 1:
-        #     label = labels[i%2]
-        # else:
-        #     label = "_nolegend_"
-        for j, state in enumerate(["off", "on"]):
-            if state == "off":
-                color = "C0"
-            if state == "on":
-                color = "C1"
-            if i < 1:
-                label = state
-            else:
-                label = "_nolegend_"
-            ax1.plot(data_dict["dates"][chunk_dict[key][state]],
-                    data_dict["voltage"][chunk_dict[key][state]],
-                    ".",# markersize=1,
-                    color = color,
-                    label = label
-                    )
-    # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
-    #         label = f"moving average {mavg_len}s")
+#     fig = plt.figure(0, figsize=(8,6.5))
+#     ax1=plt.gca()
+#     for i,key in enumerate(chunk_dict.keys()):
+#         # labels = ["off", "on"]
+#         # if i < 1:
+#         #     label = labels[i%2]
+#         # else:
+#         #     label = "_nolegend_"
+#         for j, state in enumerate(["off", "on"]):
+#             if state == "off":
+#                 color = "C0"
+#             if state == "on":
+#                 color = "C1"
+#             if i < 1:
+#                 label = state
+#             else:
+#                 label = "_nolegend_"
+#             ax1.plot(data_dict["dates"][chunk_dict[key][state]],
+#                     data_dict["voltage"][chunk_dict[key][state]],
+#                     ".",# markersize=1,
+#                     color = color,
+#                     label = label
+#                     )
+#     # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
+#     #         label = f"moving average {mavg_len}s")
 
-    plt.xticks(rotation = 45)
+#     plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"Time")
-    ax1.set_ylabel(r"Voltage [mV]")
+#     ax1.set_xlabel(r"Time")
+#     ax1.set_ylabel(r"Voltage [mV]")
 
-    plt.grid(True)
-    plt.legend(shadow=True)
-    plt.tight_layout()
-    format_im = 'png' #'pdf' or png
-    dpi = 300
-    plt.savefig(plot_dir + plotname + "_colored"
-                + '.{}'.format(format_im),
-                format=format_im, dpi=dpi)
-    ax1.cla()
+#     plt.grid(True)
+#     plt.legend(shadow=True)
+#     plt.tight_layout()
+#     format_im = 'png' #'pdf' or png
+#     dpi = 300
+#     plt.savefig(plot_dir + plotname + "_colored"
+#                 + '.{}'.format(format_im),
+#                 format=format_im, dpi=dpi)
+#     ax1.cla()
 
-def plot_colored_R_hack(data_dict, chunk_dict, plotname):
+# def plot_colored_R_hack(data_dict, chunk_dict, plotname):
 
-    fig = plt.figure(0, figsize=(8,6.5))
-    ax1=plt.gca()
-    for i,key in enumerate(chunk_dict.keys()):
-        # labels = ["off", "on"]
-        # if i < 1:
-        #     label = labels[i%2]
-        # else:
-        #     label = "_nolegend_"
-        for j, state in enumerate(["off", "on"]):
-            if state == "off":
-                color = "C0"
-            if state == "on":
-                color = "C1"
-            if i < 1:
-                label = state
-            else:
-                label = "_nolegend_"
-            ax1.plot(data_dict["dates"][chunk_dict[key][state]],
-                    data_dict["voltage"][chunk_dict[key][state]],
-                    ".",# markersize=1,
-                    color = color,
-                    label = label
-                    )
-    # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
-    #         label = f"moving average {mavg_len}s")
+#     fig = plt.figure(0, figsize=(8,6.5))
+#     ax1=plt.gca()
+#     for i,key in enumerate(chunk_dict.keys()):
+#         # labels = ["off", "on"]
+#         # if i < 1:
+#         #     label = labels[i%2]
+#         # else:
+#         #     label = "_nolegend_"
+#         for j, state in enumerate(["off", "on"]):
+#             if state == "off":
+#                 color = "C0"
+#             if state == "on":
+#                 color = "C1"
+#             if i < 1:
+#                 label = state
+#             else:
+#                 label = "_nolegend_"
+#             ax1.plot(data_dict["dates"][chunk_dict[key][state]],
+#                     data_dict["voltage"][chunk_dict[key][state]],
+#                     ".",# markersize=1,
+#                     color = color,
+#                     label = label
+#                     )
+#     # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
+#     #         label = f"moving average {mavg_len}s")
 
-    plt.xticks(rotation = 45)
+#     plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"Time")
-    ax1.set_ylabel(r"Resistance [$\Omega$]")
+#     ax1.set_xlabel(r"Time")
+#     ax1.set_ylabel(r"Resistance [$\Omega$]")
 
-    plt.grid(True)
-    plt.legend(shadow=True)
-    plt.tight_layout()
-    format_im = 'png' #'pdf' or png
-    dpi = 300
-    plt.savefig(plot_dir + plotname + "_colored_R_hack"
-                + '.{}'.format(format_im),
-                format=format_im, dpi=dpi)
-    ax1.cla()
+#     plt.grid(True)
+#     plt.legend(shadow=True)
+#     plt.tight_layout()
+#     format_im = 'png' #'pdf' or png
+#     dpi = 300
+#     plt.savefig(plot_dir + plotname + "_colored_R_hack"
+#                 + '.{}'.format(format_im),
+#                 format=format_im, dpi=dpi)
+#     ax1.cla()
 
-def calc_avg(data_dict, chunk_dict):
-    avg_dict = {"v" : [], "v_err" : []}
-    states = ["off", "on"]
-    # ncut = 60
-    # new assymetric cuut to prioritize mostly equilibrated  section
-    # 3 min fronnt cut "optimized" for 4 min measurement runs
-    n_cut_front = 60 * 3
-    n_cut_back = 30
-    keys = chunk_dict.keys()
-    for i,key in enumerate(keys):
-        for j, state in enumerate(states):
-            vs = data_dict["voltage"][chunk_dict[key][state]][
-                            n_cut_front:-n_cut_back]
-            v_avg = np.average(vs)
-            v_err = np.std(vs)
+# def calc_avg(data_dict, chunk_dict):
+#     avg_dict = {"v" : [], "v_err" : []}
+#     states = ["off", "on"]
+#     # ncut = 60
+#     # new assymetric cuut to prioritize mostly equilibrated  section
+#     # 3 min fronnt cut "optimized" for 4 min measurement runs
+#     n_cut_front = 60 * 3
+#     n_cut_back = 30
+#     keys = chunk_dict.keys()
+#     for i,key in enumerate(keys):
+#         for j, state in enumerate(states):
+#             vs = data_dict["voltage"][chunk_dict[key][state]][
+#                             n_cut_front:-n_cut_back]
+#             v_avg = np.average(vs)
+#             v_err = np.std(vs)
 
-            avg_dict["v"].append(v_avg)
-            avg_dict["v_err"].append(v_err)
-    # convert to nummpy  arrays
-    for key in avg_dict:
-        avg_dict[key] = np.array(avg_dict[key])
-    return avg_dict
+#             avg_dict["v"].append(v_avg)
+#             avg_dict["v_err"].append(v_err)
+#     # convert to nummpy  arrays
+#     for key in avg_dict:
+#         avg_dict[key] = np.array(avg_dict[key])
+#     return avg_dict
 
-def calc_avg_for_drift_10(data_dict, chunk_dict):
-    """
-    The idea is to cut 4 x 2 min averages from every 10 min measurement.
-    ncut has to be such, that section can be cut with even spacing: 
-    n_cut = len_section/n_sections
-    """
-    avg_dict = {"v" : [], "v_err" : []}
-    states = ["off", "on"]
+# def calc_avg_for_drift_10(data_dict, chunk_dict):
+#     """
+#     The idea is to cut 4 x 2 min averages from every 10 min measurement.
+#     ncut has to be such, that section can be cut with even spacing: 
+#     n_cut = len_section/n_sections
+#     """
+#     avg_dict = {"v" : [], "v_err" : []}
+#     states = ["off", "on"]
 
-    n_sec = 4
-    n_cut = 30
-    keys = chunk_dict.keys()
-    for i,key in enumerate(keys):
-        for j, state in enumerate(states):
-            vs = data_dict["voltage"][chunk_dict[key][state]][n_cut:-n_cut]
-            #v_avg_1 = np.average(vs[len(vs)//2])
-            v_avg_list = [np.average(
-                        vs[i*len(vs)//n_sec:(i+1)*len(vs)//n_sec])
-                        for i in range(n_sec)
-                        ]
-            v_err = np.std(vs)
+#     n_sec = 4
+#     n_cut = 30
+#     keys = chunk_dict.keys()
+#     for i,key in enumerate(keys):
+#         for j, state in enumerate(states):
+#             vs = data_dict["voltage"][chunk_dict[key][state]][n_cut:-n_cut]
+#             #v_avg_1 = np.average(vs[len(vs)//2])
+#             v_avg_list = [np.average(
+#                         vs[i*len(vs)//n_sec:(i+1)*len(vs)//n_sec])
+#                         for i in range(n_sec)
+#                         ]
+#             v_err = np.std(vs)
 
-            for v_avg in v_avg_list:
-                avg_dict["v"].append(v_avg)
-                avg_dict["v_err"].append(v_err)
-    # convert to nummpy  arrays
-    for key in avg_dict:
-        avg_dict[key] = np.array(avg_dict[key])
-    return avg_dict
+#             for v_avg in v_avg_list:
+#                 avg_dict["v"].append(v_avg)
+#                 avg_dict["v_err"].append(v_err)
+#     # convert to nummpy  arrays
+#     for key in avg_dict:
+#         avg_dict[key] = np.array(avg_dict[key])
+#     return avg_dict
 
-def calc_diffs(avg_dict):
-    diff_dict = {"dv" : [], "dv_err" : []}
-    for j in range(1, len(avg_dict["v"])-1):
-        # subtract average of adjacent
-        dv = avg_dict["v"][j]-(avg_dict["v"][j-1] +  avg_dict["v"][j-2]) / 2
-        dv_err = np.sqrt(avg_dict["v_err"][j] **2 
-                        +(avg_dict["v_err"][j-1] / 2) **2
-                        +(avg_dict["v_err"][j+1] / 2) **2
-                        )
-        diff_dict["dv"].append(dv)
-        diff_dict["dv_err"].append(dv_err)
-            # convert to nummpy  arrays
-    for key in diff_dict:
-        diff_dict[key] = np.array(diff_dict[key])
-    return diff_dict
+# def calc_diffs(avg_dict):
+#     diff_dict = {"dv" : [], "dv_err" : []}
+#     for j in range(1, len(avg_dict["v"])-1):
+#         # subtract average of adjacent
+#         dv = avg_dict["v"][j]-(avg_dict["v"][j-1] +  avg_dict["v"][j-2]) / 2
+#         dv_err = np.sqrt(avg_dict["v_err"][j] **2 
+#                         +(avg_dict["v_err"][j-1] / 2) **2
+#                         +(avg_dict["v_err"][j+1] / 2) **2
+#                         )
+#         diff_dict["dv"].append(dv)
+#         diff_dict["dv_err"].append(dv_err)
+#             # convert to nummpy  arrays
+#     for key in diff_dict:
+#         diff_dict[key] = np.array(diff_dict[key])
+#     return diff_dict
 
-def plot_diffs(diff_dict, plotname, exclude_list = [],
-                labels = ["on","off"], color_increment = 0
-                ):
+# def plot_diffs(diff_dict, plotname, exclude_list = [],
+#                 labels = ["on","off"], color_increment = 0
+#                 ):
 
-    fig = plt.figure(0, figsize=(8,6.5))
-    ax1=plt.gca()
-    # introduce plotcounter to stop legend when appropriate
-    plot_counter = 0
-    for i in range(len(diff_dict["dv"])):
-        if i in exclude_list:
-            pass
-        else:
-            if plot_counter < 2:
-                label = labels[plot_counter]
-            else:
-                label = "_nolegend_"
-            ax1.errorbar(i,
-                    diff_dict["dv"][i],
-                    yerr = diff_dict["dv_err"][i],
-                    fmt = ".",# markersize=1,
-                    color = f"C{(i + color_increment)%2}" ,
-                    label = label
-                    )
-            plot_counter += 1
+#     fig = plt.figure(0, figsize=(8,6.5))
+#     ax1=plt.gca()
+#     # introduce plotcounter to stop legend when appropriate
+#     plot_counter = 0
+#     for i in range(len(diff_dict["dv"])):
+#         if i in exclude_list:
+#             pass
+#         else:
+#             if plot_counter < 2:
+#                 label = labels[plot_counter]
+#             else:
+#                 label = "_nolegend_"
+#             ax1.errorbar(i,
+#                     diff_dict["dv"][i],
+#                     yerr = diff_dict["dv_err"][i],
+#                     fmt = ".",# markersize=1,
+#                     color = f"C{(i + color_increment)%2}" ,
+#                     label = label
+#                     )
+#             plot_counter += 1
         
-    # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
-    #         label = f"moving average {mavg_len}s")
+#     # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
+#     #         label = f"moving average {mavg_len}s")
 
-    #plt.xticks(rotation = 45)
+#     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"Cycle")
-    ax1.set_ylabel(r"Voltage difference [mV]")
+#     ax1.set_xlabel(r"Cycle")
+#     ax1.set_ylabel(r"Voltage difference [mV]")
 
-    plt.grid(True)
-    plt.legend(shadow=True)
-    plt.tight_layout()
-    format_im = 'png' #'pdf' or png
-    dpi = 300
-    plt.savefig(plot_dir + plotname + "_diffs"
-                + '.{}'.format(format_im),
-                format=format_im, dpi=dpi)
-    ax1.cla()
+#     plt.grid(True)
+#     plt.legend(shadow=True)
+#     plt.tight_layout()
+#     format_im = 'png' #'pdf' or png
+#     dpi = 300
+#     plt.savefig(plot_dir + plotname + "_diffs"
+#                 + '.{}'.format(format_im),
+#                 format=format_im, dpi=dpi)
+#     ax1.cla()
 
-def plot_diffs_R_hack(diff_dict, plotname, exclude_list = [],
-                        labels = ["on","off"], color_increment = 0
-                        ):
+# def plot_diffs_R_hack(diff_dict, plotname, exclude_list = [],
+#                         labels = ["on","off"], color_increment = 0
+#                         ):
 
-    fig = plt.figure(0, figsize=(8,6.5))
-    ax1=plt.gca()
-    plot_counter = 0
-    for i in range(len(diff_dict["dv"])):
-        if i in exclude_list:
-            pass
-        else:
-            if plot_counter < 2:
-                label = labels[plot_counter]
-            else:
-                label = "_nolegend_"
-            ax1.errorbar(i,
-                    diff_dict["dv"][i],
-                    yerr = diff_dict["dv_err"][i],
-                    fmt = ".",# markersize=1,
-                    color = f"C{(i + color_increment)%2}" ,
-                    label = label
-                    )
-            plot_counter += 1
+#     fig = plt.figure(0, figsize=(8,6.5))
+#     ax1=plt.gca()
+#     plot_counter = 0
+#     for i in range(len(diff_dict["dv"])):
+#         if i in exclude_list:
+#             pass
+#         else:
+#             if plot_counter < 2:
+#                 label = labels[plot_counter]
+#             else:
+#                 label = "_nolegend_"
+#             ax1.errorbar(i,
+#                     diff_dict["dv"][i],
+#                     yerr = diff_dict["dv_err"][i],
+#                     fmt = ".",# markersize=1,
+#                     color = f"C{(i + color_increment)%2}" ,
+#                     label = label
+#                     )
+#             plot_counter += 1
         
-    # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
-    #         label = f"moving average {mavg_len}s")
+#     # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
+#     #         label = f"moving average {mavg_len}s")
 
-    #plt.xticks(rotation = 45)
+#     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"Cycle")
-    ax1.set_ylabel(r"Resistance difference [$\Omega$]")
+#     ax1.set_xlabel(r"Cycle")
+#     ax1.set_ylabel(r"Resistance difference [$\Omega$]")
 
-    plt.grid(True)
-    plt.legend(shadow=True)
-    plt.tight_layout()
-    format_im = 'png' #'pdf' or png
-    dpi = 300
-    plt.savefig(plot_dir + plotname + "_diffs_R_hack"
-                + '.{}'.format(format_im),
-                format=format_im, dpi=dpi)
-    ax1.cla()
+#     plt.grid(True)
+#     plt.legend(shadow=True)
+#     plt.tight_layout()
+#     format_im = 'png' #'pdf' or png
+#     dpi = 300
+#     plt.savefig(plot_dir + plotname + "_diffs_R_hack"
+#                 + '.{}'.format(format_im),
+#                 format=format_im, dpi=dpi)
+#     ax1.cla()
             
-def avg_diff(diff_dict, exclude_list = []):
-    index_list_on = [i for i in range(0,len(diff_dict["dv"]),2)
-                  if not (i in exclude_list)]
-    index_list_off = [i for i in range(1,len(diff_dict["dv"]),2)
-                if not (i in exclude_list)]
-    print(index_list_on, index_list_off)
-    dv_avg_on = np.average(diff_dict["dv"][index_list_on])
-    dv_avg_off = np.average(diff_dict["dv"][index_list_off])
-    dv_err_avg_on = (np.sqrt(np.sum(diff_dict["dv_err"][index_list_on] **2)) / 
-                     np.sqrt(len(index_list_on)))
-    dv_err_avg_off =(np.sqrt(np.sum(diff_dict["dv_err"][index_list_off] **2))/ 
-                     np.sqrt(len(index_list_off)))
-    return dv_avg_on, dv_avg_off, dv_err_avg_on, dv_err_avg_off
+# def avg_diff(diff_dict, exclude_list = []):
+#     index_list_on = [i for i in range(0,len(diff_dict["dv"]),2)
+#                   if not (i in exclude_list)]
+#     index_list_off = [i for i in range(1,len(diff_dict["dv"]),2)
+#                 if not (i in exclude_list)]
+#     print(index_list_on, index_list_off)
+#     dv_avg_on = np.average(diff_dict["dv"][index_list_on])
+#     dv_avg_off = np.average(diff_dict["dv"][index_list_off])
+#     dv_err_avg_on = (np.sqrt(np.sum(diff_dict["dv_err"][index_list_on] **2)) / 
+#                      np.sqrt(len(index_list_on)))
+#     dv_err_avg_off =(np.sqrt(np.sum(diff_dict["dv_err"][index_list_off] **2))/ 
+#                      np.sqrt(len(index_list_off)))
+#     return dv_avg_on, dv_avg_off, dv_err_avg_on, dv_err_avg_off
 
-# implement polynomial drift filter as in https://arxiv.org/pdf/1009.1894.pdf
-# Note there will be someissues with too few data points
-def A_drift_filter(N,p):
-    A = [  
-        [
-        (1/(2*p))*binom(p,j-i)*(-1)**j if (0 <=(j-i) <= p) else 0
-        for j in range(0,N)
-        ]
-        for i in range(0,N-p)
+# # implement polynomial drift filter as in https://arxiv.org/pdf/1009.1894.pdf
+# # Note there will be someissues with too few data points
+# def A_drift_filter(N,p):
+#     A = [  
+#         [
+#         (1/(2*p))*binom(p,j-i)*(-1)**j if (0 <=(j-i) <= p) else 0
+#         for j in range(0,N)
+#         ]
+#         for i in range(0,N-p)
     
-        ]
-    return np.asmatrix(A)
+#         ]
+#     return np.asmatrix(A)
 
-def A_drift_filter_10_min_sectioned(N,p):
-    """
-    (j//4)%2 flips the sign every 4 iterations since every  measurement is cut
-    into 4 to determine drift.
+# def A_drift_filter_10_min_sectioned(N,p):
+#     """
+#     (j//4)%2 flips the sign every 4 iterations since every  measurement is cut
+#     into 4 to determine drift.
 
-    Idea seems broken
-    """
-    A = [  
-        [
-        (1/(2*p))*binom(p,j-i)*(-1)**(j//4)%2 if (0 <=(j-i) <= p) else 0
-        for j in range(0,N)
-        ]
-        for i in range(0,N-p)
+#     Idea seems broken
+#     """
+#     A = [  
+#         [
+#         (1/(2*p))*binom(p,j-i)*(-1)**(j//4)%2 if (0 <=(j-i) <= p) else 0
+#         for j in range(0,N)
+#         ]
+#         for i in range(0,N-p)
     
-        ]
-    return np.asmatrix(A)
+#         ]
+#     return np.asmatrix(A)
 
-def U_drift_filter(avg_dict):
-    U = np.asmatrix(avg_dict["v"]).T
-    return U
+# def U_drift_filter(avg_dict):
+#     U = np.asmatrix(avg_dict["v"]).T
+#     return U
 
-def drift_filter(avg_dict,p=3):
-    U = U_drift_filter(avg_dict)
-    N = len(U)
-    A = A_drift_filter(N,p)
-    #print("U: ", U)
-    #print("A: ", A)
-    Y = np.asmatrix(A)*np.asmatrix(U)
-    X = np.asmatrix([1 for i in range(N-p)]).T
-    mu = X.T* inv(A*A.T) * Y /(X.T * inv(A*A.T) * X)
-    # Calculate Errors
-    # W  =X.T* inv(A*A.T) /(X.T * inv(A*A.T) * X)
-    # print(np.asmatrix(np.cov(Y,Y)), type(np.asmatrix(np.cov(Y,Y))))
-    # print(W, type(W))
-    print(mu[0,0])
-    print(Y.shape, X.shape,inv(A*A.T).shape, ((Y - mu[0,0]*X).T).shape )
-    s2 = ((Y - mu[0,0]*X).T * inv(A*A.T) * (Y - mu[0,0]*X))/(N-p-1)
-    # # Doesn't work as I expected
-    # var = W * np.asmatrix(np.cov(Y)) * W.T
-    # sig = np.sqrt(np.abs(var))
-    var = s2 / (X.T * inv(A*A.T) * X)
-    sig = np.sqrt(var)
-
-
-
-    return [mu, Y, sig]
-
-def drift_filter_10_min_sectioned(avg_dict,p=3):
-    U = U_drift_filter(avg_dict)
-    N = len(U)
-    A = A_drift_filter_10_min_sectioned(N,p)
-    # print("U: ", U)
-    # print("A: ", A)
-    Y = np.asmatrix(A)*np.asmatrix(U)
-    X = np.asmatrix([1 for i in range(N-p)]).T
-    mu = X.T*(A*A.T)**-1 * Y /(X.T * (A*A.T)**-1 * X)
-    return mu
+# def drift_filter(avg_dict,p=3):
+#     U = U_drift_filter(avg_dict)
+#     N = len(U)
+#     A = A_drift_filter(N,p)
+#     #print("U: ", U)
+#     #print("A: ", A)
+#     Y = np.asmatrix(A)*np.asmatrix(U)
+#     X = np.asmatrix([1 for i in range(N-p)]).T
+#     mu = X.T* inv(A*A.T) * Y /(X.T * inv(A*A.T) * X)
+#     # Calculate Errors
+#     # W  =X.T* inv(A*A.T) /(X.T * inv(A*A.T) * X)
+#     # print(np.asmatrix(np.cov(Y,Y)), type(np.asmatrix(np.cov(Y,Y))))
+#     # print(W, type(W))
+#     print(mu[0,0])
+#     print(Y.shape, X.shape,inv(A*A.T).shape, ((Y - mu[0,0]*X).T).shape )
+#     s2 = ((Y - mu[0,0]*X).T * inv(A*A.T) * (Y - mu[0,0]*X))/(N-p-1)
+#     # # Doesn't work as I expected
+#     # var = W * np.asmatrix(np.cov(Y)) * W.T
+#     # sig = np.sqrt(np.abs(var))
+#     var = s2 / (X.T * inv(A*A.T) * X)
+#     sig = np.sqrt(var)
 
 
-def make_HABS_power(file_path):
-    # Function to load a file conntaining HBS current andVoltage outputs and
-    # writing power to a dict
-    with open(file_path) as f:
-        raw_dict  = json.load(f)
 
-    dates_c = np.array([pa.str_to_dt(ls[0])
-                for ls in raw_dict["habs_current_output"]])
-    print("dates_c", dates_c)
-    dates_v = np.array([pa.str_to_dt(ls[0])
-                for ls in raw_dict["habs_voltage_output"]])
-    # move to German timezone
-    utc_offset = 2
-    dates_c = np.array([(
-            date.astimezone(dt.timezone(
-                dt.timedelta(hours=utc_offset))) 
-                + dt.timedelta(hours=utc_offset))
-            for date in dates_c])
-    dates_v = np.array([(
-            date.astimezone(dt.timezone(
-                dt.timedelta(hours=utc_offset))) 
-                + dt.timedelta(hours=utc_offset))
-            for date in dates_v])
-    current = np.array([float(ls[1]) 
-                    for ls in raw_dict["habs_current_output"]])
-    voltage = np.array([float(ls[1]) 
-                    for ls in raw_dict["habs_voltage_output"]])
+#     return [mu, Y, sig]
 
-    # only pick values where both Current and voltage are recorded
-    P_dict = {"dates": [], "current": [], "voltage": [], "power":[]}
-    for i_c,date in enumerate(dates_c):
-        print(i_c)
-        if date in dates_v:
-            i_v = np.where(dates_v == date)[0]
-            P_dict["dates"].append(date)
-            P_dict["current"].append(current[i_c])
-            P_dict["voltage"].append(current[i_v])
-            power = current[i_c] * current[i_v]
-            P_dict["power"].append(power)
+# def drift_filter_10_min_sectioned(avg_dict,p=3):
+#     U = U_drift_filter(avg_dict)
+#     N = len(U)
+#     A = A_drift_filter_10_min_sectioned(N,p)
+#     # print("U: ", U)
+#     # print("A: ", A)
+#     Y = np.asmatrix(A)*np.asmatrix(U)
+#     X = np.asmatrix([1 for i in range(N-p)]).T
+#     mu = X.T*(A*A.T)**-1 * Y /(X.T * (A*A.T)**-1 * X)
+#     return mu
+
+
+# def make_HABS_power(file_path):
+#     # Function to load a file conntaining HBS current andVoltage outputs and
+#     # writing power to a dict
+#     with open(file_path) as f:
+#         raw_dict  = json.load(f)
+
+#     dates_c = np.array([pa.str_to_dt(ls[0])
+#                 for ls in raw_dict["habs_current_output"]])
+#     print("dates_c", dates_c)
+#     dates_v = np.array([pa.str_to_dt(ls[0])
+#                 for ls in raw_dict["habs_voltage_output"]])
+#     # move to German timezone
+#     utc_offset = 2
+#     dates_c = np.array([(
+#             date.astimezone(dt.timezone(
+#                 dt.timedelta(hours=utc_offset))) 
+#                 + dt.timedelta(hours=utc_offset))
+#             for date in dates_c])
+#     dates_v = np.array([(
+#             date.astimezone(dt.timezone(
+#                 dt.timedelta(hours=utc_offset))) 
+#                 + dt.timedelta(hours=utc_offset))
+#             for date in dates_v])
+#     current = np.array([float(ls[1]) 
+#                     for ls in raw_dict["habs_current_output"]])
+#     voltage = np.array([float(ls[1]) 
+#                     for ls in raw_dict["habs_voltage_output"]])
+
+#     # only pick values where both Current and voltage are recorded
+#     P_dict = {"dates": [], "current": [], "voltage": [], "power":[]}
+#     for i_c,date in enumerate(dates_c):
+#         print(i_c)
+#         if date in dates_v:
+#             i_v = np.where(dates_v == date)[0]
+#             P_dict["dates"].append(date)
+#             P_dict["current"].append(current[i_c])
+#             P_dict["voltage"].append(current[i_v])
+#             power = current[i_c] * current[i_v]
+#             P_dict["power"].append(power)
     
-    for key in P_dict.keys():
-        P_dict[key] = np.array(P_dict[key])
+#     for key in P_dict.keys():
+#         P_dict[key] = np.array(P_dict[key])
     
-    return P_dict
+#     return P_dict
 
-def make_HABS_power_1_per_min(file_path):
-    # Function to load a file conntaining HBS current andVoltage outputs and
-    # writing power to a dict
-    with open(file_path) as f:
-        raw_dict  = json.load(f)
-        data = raw_dict
+# def make_HABS_power_1_per_min(file_path):
+#     # Function to load a file conntaining HBS current andVoltage outputs and
+#     # writing power to a dict
+#     with open(file_path) as f:
+#         raw_dict  = json.load(f)
+#         data = raw_dict
 
-    #  Old date import
-    # # only take every 60th element of raw dict
-    # dates_c = np.array([pa.str_to_dt(ls[0])
-    #             for ls in raw_dict["habs_current_output"]])
-    # dates_v = np.array([pa.str_to_dt(ls[0])
-    #             for ls in raw_dict["habs_voltage_output"]])
-    # # move to German timezone
-    # utc_offset = 2
-    # dates_c = np.array([(
-    #         date.astimezone(dt.timezone(
-    #             dt.timedelta(hours=utc_offset))) 
-    #             + dt.timedelta(hours=utc_offset))
-    #         for date in dates_c])
-    # dates_v = np.array([(
-    #         date.astimezone(dt.timezone(
-    #             dt.timedelta(hours=utc_offset))) 
-    #             + dt.timedelta(hours=utc_offset))
-    #         for date in dates_v])
+#     #  Old date import
+#     # # only take every 60th element of raw dict
+#     # dates_c = np.array([pa.str_to_dt(ls[0])
+#     #             for ls in raw_dict["habs_current_output"]])
+#     # dates_v = np.array([pa.str_to_dt(ls[0])
+#     #             for ls in raw_dict["habs_voltage_output"]])
+#     # # move to German timezone
+#     # utc_offset = 2
+#     # dates_c = np.array([(
+#     #         date.astimezone(dt.timezone(
+#     #             dt.timedelta(hours=utc_offset))) 
+#     #             + dt.timedelta(hours=utc_offset))
+#     #         for date in dates_c])
+#     # dates_v = np.array([(
+#     #         date.astimezone(dt.timezone(
+#     #             dt.timedelta(hours=utc_offset))) 
+#     #             + dt.timedelta(hours=utc_offset))
+#     #         for date in dates_v])
 
-    # new date import from slowdash
-    t_series_c = (np.array(data["habs_current_output"]["t"]) 
-               + float(data["habs_current_output"]["start"]))
-    dates_c = mpl.dates.num2date(t_series_c/86400)
-    t_series_v = (np.array(data["habs_voltage_output"]["t"]) 
-               + float(data["habs_voltage_output"]["start"]))
-    dates_v = mpl.dates.num2date(t_series_v/86400)
+#     # new date import from slowdash
+#     t_series_c = (np.array(data["habs_current_output"]["t"]) 
+#                + float(data["habs_current_output"]["start"]))
+#     dates_c = mpl.dates.num2date(t_series_c/86400)
+#     t_series_v = (np.array(data["habs_voltage_output"]["t"]) 
+#                + float(data["habs_voltage_output"]["start"]))
+#     dates_v = mpl.dates.num2date(t_series_v/86400)
 
-    # OLD
-    # current = np.array([float(ls[1]) 
-    #                 for ls in raw_dict["habs_current_output"]
-    #                 ])
-    # voltage = np.array([float(ls[1]) 
-    #                 for ls in raw_dict["habs_voltage_output"]
-    #                 ])
+#     # OLD
+#     # current = np.array([float(ls[1]) 
+#     #                 for ls in raw_dict["habs_current_output"]
+#     #                 ])
+#     # voltage = np.array([float(ls[1]) 
+#     #                 for ls in raw_dict["habs_voltage_output"]
+#     #                 ])
 
-    current = np.array(data["habs_current_output"]["x"])
-    # voltage = np.array(data["habs_voltage_output"]["x"])
-    # print(type(current[1]))
-    # print("voltage:", voltage)
+#     current = np.array(data["habs_current_output"]["x"])
+#     # voltage = np.array(data["habs_voltage_output"]["x"])
+#     # print(type(current[1]))
+#     # print("voltage:", voltage)
 
-    def v_interpolate(data):
-        t_arr = (np.array(data["habs_voltage_output"]["t"]) 
-               + float(data["habs_voltage_output"]["start"]))
-        f_int = interp1d(t_arr,
-                        data["habs_voltage_output"]["x"],
-                        kind = "linear",fill_value=(np.NaN,np.NaN),
-                        bounds_error= False
-                )
-        return f_int
-    v_int = v_interpolate(data)
-    voltage = v_int(t_series_c)
+#     def v_interpolate(data):
+#         t_arr = (np.array(data["habs_voltage_output"]["t"]) 
+#                + float(data["habs_voltage_output"]["start"]))
+#         f_int = interp1d(t_arr,
+#                         data["habs_voltage_output"]["x"],
+#                         kind = "linear",fill_value=(np.NaN,np.NaN),
+#                         bounds_error= False
+#                 )
+#         return f_int
+#     v_int = v_interpolate(data)
+#     voltage = v_int(t_series_c)
 
-    # only pick values where both Current and voltage are recorded
-    P_dict = {"dates": [], "current": [], "voltage": [], "power":[]}
-    # # take only every 60th to speed up
-    # for i_c,date in enumerate(dates_c[::60]):
-    #     #print(i_c)
-    #     if date in dates_v:
-    #         i_v = np.where(dates_v == date)[0]
-    #         P_dict["dates"].append(date)
-    #         P_dict["current"].append(current[i_c*60])
-    #         P_dict["voltage"].append(voltage[i_v])
-    #         power = current[i_c*60] * voltage[i_v]
-    #         P_dict["power"].append(power)
+#     # only pick values where both Current and voltage are recorded
+#     P_dict = {"dates": [], "current": [], "voltage": [], "power":[]}
+#     # # take only every 60th to speed up
+#     # for i_c,date in enumerate(dates_c[::60]):
+#     #     #print(i_c)
+#     #     if date in dates_v:
+#     #         i_v = np.where(dates_v == date)[0]
+#     #         P_dict["dates"].append(date)
+#     #         P_dict["current"].append(current[i_c*60])
+#     #         P_dict["voltage"].append(voltage[i_v])
+#     #         power = current[i_c*60] * voltage[i_v]
+#     #         P_dict["power"].append(power)
 
-    P_dict["dates"] = dates_c
-    P_dict["current"] = current
-    P_dict["voltage"] = voltage
-    power = np.array(current) * np.array(voltage)
-    P_dict["power"] = power
+#     P_dict["dates"] = dates_c
+#     P_dict["current"] = current
+#     P_dict["voltage"] = voltage
+#     power = np.array(current) * np.array(voltage)
+#     P_dict["power"] = power
     
-    for key in P_dict.keys():
-        P_dict[key] = np.array(P_dict[key])
+#     for key in P_dict.keys():
+#         P_dict[key] = np.array(P_dict[key])
     
-    return P_dict
+#     return P_dict
 
 def save_dict(dict, filename):
         with open(filename + ".pkl", "wb") as f:
@@ -570,6 +571,13 @@ Parameters
         self.initial_state = initial_state
         self.front_crop = front_crop
         self.rear_crop = rear_crop
+
+        # Make output dirs
+        self.plot_dir = plot_dir
+        # Deliberately commented out to breakk bad functionality
+        # self.data_dir = (os.path.dirname(os.path.abspath(__file__)) + os.sep 
+        #             + "data/")
+        os.makedirs(self.plot_dir, exist_ok=True)
 
 
 
@@ -1449,7 +1457,7 @@ Parameters
         self.crop_dict()
         self.basic_ABA_fit_all_B()
         # make run_dir
-        run_dir = os.path.dirname(plot_dir + f"{self.run_name}" 
+        run_dir = os.path.dirname(self.plot_dir + f"{self.run_name}" 
                                  + os.sep)
         os.makedirs(run_dir, exist_ok=True)
         self.plot_all_basic_ABA_fit(plot_path= run_dir + os.sep +
@@ -1462,7 +1470,7 @@ Parameters
         self.crop_dict()
         self.quad_ABA_fit_all_B()
         # make run_dir
-        run_dir = os.path.dirname(plot_dir + f"{self.run_name}" 
+        run_dir = os.path.dirname(self.plot_dir + f"{self.run_name}" 
                                  + os.sep)
         print("cwd: ", os.getcwd())
         print("run_dir: ", run_dir)
@@ -1476,7 +1484,7 @@ Parameters
         # crop slices
         self.crop_dict()
         # make run_dir
-        run_dir = os.path.dirname(plot_dir + f"{self.run_name}" 
+        run_dir = os.path.dirname(self.plot_dir + f"{self.run_name}" 
                                     + os.sep)
         self.run_dir = run_dir
         os.makedirs(run_dir, exist_ok=True)
@@ -2192,12 +2200,12 @@ def extract(sc_dir, HABS_dir, run_name, data_name,
             print("time taken for step:", run_time, "min" )
             start_time = time.time()
 
-        save_dict(ext_dict, plot_dir + run_name + os.sep 
+        save_dict(ext_dict, self.plot_dir + run_name + os.sep 
                                     + "ext_dict")
         data_sets = [[ext_dict[i]["extractor"]] 
                     for i,z in enumerate(label_list)
                     ]
-        save_dict(data_sets, plot_dir + run_name + os.sep 
+        save_dict(data_sets, self.plot_dir + run_name + os.sep 
                                     + "data_sets")
         return ext
         # ##### HACK END  load  instead        
@@ -2251,17 +2259,17 @@ if __name__ =="__main__":
     #             )
 
     # ######## Load data back             
-    data_sets = load_dict(plot_dir + run_name + os.sep 
+    data_sets = load_dict(self.plot_dir + run_name + os.sep 
                                 + "data_sets")
     # print("data_sets:",data_sets)
 
-    ext_dict = load_dict(plot_dir + run_name + os.sep 
+    ext_dict = load_dict(self.plot_dir + run_name + os.sep 
                                 + "ext_dict")
     result_dict = make_result_dict(ext_dict)
 
 
     power_plot(result_dict,
-                plot_path = plot_dir + run_name + os.sep 
+                plot_path = self.plot_dir + run_name + os.sep 
                            + "Detected_P_over_pid",
                 x_lst= label_list,
                 x_label = r"PID Setpoint",
@@ -2269,7 +2277,7 @@ if __name__ =="__main__":
                 flow_list = [0.05],
                 i_split = 11,)
     # fudge_power_plot(data_sets, 
-    #             plot_path= plot_dir + run_name + os.sep 
+    #             plot_path= self.plot_dir + run_name + os.sep 
     #                        + "Detected_P_over_T{}".format(
     #                         denoise_string),
     #             flow_list = [10],
@@ -2279,7 +2287,7 @@ if __name__ =="__main__":
     T_list = T_from_TC(np.array(pid_list))
     
     fudge_power_plot_fit(data_sets, 
-                plot_path= plot_dir + run_name + os.sep 
+                plot_path= self.plot_dir + run_name + os.sep 
                            + "Detected_P_over_T_fit",
                 flow_list = [0.05],
                 T_lst = T_list,
