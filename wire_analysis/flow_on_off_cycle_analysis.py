@@ -2008,7 +2008,7 @@ def make_result_dict(ext_dict):
         r0_arr = np.array(
                     [val["extractor"].fit_results["quad"]["c0_w_mean"] 
                     for val in ext_dict.values()]
-                    )
+                    ) * 1000
         µW_per_ohm = calib_factor(r0_arr)
         p_arr = µW_per_ohm * v_mean_arr
         p_err_arr = µW_per_ohm * v_err_arr
