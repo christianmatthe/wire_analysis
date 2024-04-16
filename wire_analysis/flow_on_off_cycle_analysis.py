@@ -551,6 +551,7 @@ Parameters
                  start_date, 
                  end_date,
                  run_name,
+                 plot_dir,
                  time_interval = dt.timedelta(minutes = 4),
                  utc_offset = 1,
                  initial_state = 0,
