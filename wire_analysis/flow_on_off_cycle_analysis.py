@@ -1464,6 +1464,8 @@ Parameters
         # make run_dir
         run_dir = os.path.dirname(plot_dir + f"{self.run_name}" 
                                  + os.sep)
+        print("cwd: ", os.getcwd())
+        print("run_dir: ", run_dir)
         os.makedirs(run_dir, exist_ok=True)
         self.plot_all_quad_ABA_fit(plot_path= run_dir + os.sep +
                                         "quad_ABA_fit_all_B")
