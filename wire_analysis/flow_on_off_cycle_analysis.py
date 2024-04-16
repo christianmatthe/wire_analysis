@@ -1445,7 +1445,7 @@ Parameters
         # TODO Q: shoudl the error not be the std_of_mean
         vals = [values, errors, res[0], res[1], res[2], res[3], res[4],
                 res[5], res[6],
-                res_c0[3], c0_errors[4]]
+                res_c0[2], res_c0[3]]
         print([(keys[i] + ": ", f"{vals[i]:.3e}") for i in range(2,len(keys))])
         self.fit_results[dic[0]["method"]] = {}
         for i,key in enumerate(keys):
