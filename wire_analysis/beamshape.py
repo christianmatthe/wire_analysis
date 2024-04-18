@@ -100,8 +100,9 @@ def integrate_H_angles_1D(theta_lim = [0,np.pi/2], l_eff = 7.96, y0 = 35.17,
                                 )
     return result
     
-def calc_norm_factor(l_eff , y0 ):
-    return 1/integrate_H_angles_1D(l_eff = l_eff, y0 = y0)
+def calc_norm_factor(l_eff
+                     ):
+    return 1/integrate_H_angles_1D(l_eff = l_eff)
 
 
 def integrate_H_on_plane(x_lims = [-10,10], z_lims = [-2.5e-3,2.5e-3],
@@ -111,7 +112,7 @@ def integrate_H_on_plane(x_lims = [-10,10], z_lims = [-2.5e-3,2.5e-3],
     if norm_factor == None:
         # per default calculate noormalization factor
         # The function is much faster if norm_factor is provided
-        norm_factor = calc_norm_factor(l_eff = l_eff, y0 = y0)
+        norm_factor = calc_norm_factor(l_eff = l_eff)
           
     
     def theta(x,z):
@@ -142,7 +143,7 @@ def integrate_H_on_plane_1D(x_lims = [-10,10], z_lims = [-2.5e-3,2.5e-3],
     if norm_factor == None:
         # per default calculate noormalization factor
         # The function is much faster if norm_factor is provided
-        norm_factor = calc_norm_factor(l_eff = l_eff, y0 = y0)
+        norm_factor = calc_norm_factor(l_eff = l_eff)
     
     z_center  = (z_lims[1] + z_lims[0])/2
     z_width = z_lims[1] - z_lims[0]
@@ -179,7 +180,7 @@ def integrate_H_on_plane_1D_etaW(x_lims = [-10,10], z_lims = [-2.5e-3,2.5e-3],
     if norm_factor == None:
         # per default calculate noormalization factor
         # The function is much faster if norm_factor is provided
-        norm_factor = calc_norm_factor(l_eff = l_eff, y0 = y0)
+        norm_factor = calc_norm_factor(l_eff = l_eff)
     
     z_center  = (z_lims[1] + z_lims[0])/2
     z_width = z_lims[1] - z_lims[0]

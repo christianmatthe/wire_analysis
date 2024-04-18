@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 import wire_analysis as wa
 from wire_analysis.utils import load_json_dict, load_extractor_dict_json
@@ -48,6 +49,7 @@ for filename in os.listdir(work_dir):
 
 #     beamfit.default_plot_data()
 
+
 # function for extracting data lists
 def p_data_plot_dict(filename):
     beamfit = wa.Beamfit(
@@ -64,6 +66,7 @@ def p_data_plot_dict(filename):
     z_arr, extractor_dict = sort_by_z_list(z_array_unsorted,
                                         extractor_dict_unsorted)
 
+    
     P_arr = extractor_dict["p_arr"]
     P_err_arr = extractor_dict["p_err_arr"]
     plot_dict = {}
@@ -75,12 +78,18 @@ def p_data_plot_dict(filename):
 # plot data into shared plot   
 #######
 # TC_lst = [200, 300, 390, 475]
-indicator_list = ["720TC", "475TC", "390TC", "300TC","200TC",  "0A"]
+indicator_list = ["720TC",  "390TC", "0A"]
+# indicator_list = ["720TC", "475TC", "390TC", "300TC","200TC",  "0A"]
 filename_list = ["1sccm_" + indicator + ".json" 
                  for indicator in indicator_list]
 # for TC_lst 44 is a HACK for 0 A ("room temp" =  44 = 297.7K)
-TC_lst = [720, 475, 390, 300, 200, 44] 
+#TC_lst = [720, 475, 390, 300, 200, 44] 
+TC_lst = [720, 390,  44] 
 T_lst = [TC_to_T_Hack(TC) for TC in TC_lst]
+# Calculate recalib factors
+# input resistances typical for the TC values set above
+r_base_list = []
+
 pd_dict = {}
 # Start plot:
 plotname = "multi_run_power"
