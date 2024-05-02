@@ -1395,9 +1395,9 @@ Parameters
             if key == 0:
                 w_mean = self.fit_results[method]["w_mean"]
                 w_std = self.fit_results[method]["w_std"]
-                label = ("fit data, \n" + "Average $\Delta R = $ "
+                label = ("fit data, \n" + r"Average $\Delta R = $ "
                          +  f": {w_mean:.3e}" 
-                        + r"$\pm$" + f"{w_std:.1e}" + r"$\Omega"
+                        + r"$\pm$" + f"{w_std:.1e}" + r"$\Omega$"
                         )
             else:
                 label = "_nolegend_"
@@ -1427,7 +1427,7 @@ Parameters
                         label = (f"{i_c - 1}: "
                                 r"$\Delta R$= "
                                  + f"{fit['popt'][3]:.3e}"
-                                 + r"$\Omega")
+                                 + r"$\Omega$")
                     )
             plt.legend(shadow=True,loc='lower left', bbox_to_anchor=(0, 1),
                   fontsize=14,
