@@ -1368,6 +1368,86 @@ Parameters
         ax1.cla()
         return
 
+    def plot_all_ABA_fit_paper(self,
+                        plot_path,
+                        method = "quad",
+                        plot_v_eq = False,
+                        **kwargs
+                            ):
+
+        fig = plt.figure(0, figsize=(8,6.5))
+        ax1=plt.gca()
+        # plot data
+        for key,slice in self.sliced_dict.items():
+            if key == 0:
+                label = "data"
+            else:
+                label = "_nolegend_"
+            ax1.plot(slice["dates"],slice["voltage"]*1000,".",
+                markersize=8,
+                color = "C0",
+                label = label)
+        
+        data_ylims = ax1.get_ylim()
+            
+        # plot cropped data
+        for key,slice in self.cropped_dict.items():
+            if key == 0:
+                w_mean = self.fit_results[method]["w_mean"]
+                w_std = self.fit_results[method]["w_std"]
+                label = ("fit_data" + f", offset w_mean: {w_mean:.3e}" 
+                        + r"$\pm$" + f"{w_std:.1e}")
+            else:
+                label = "_nolegend_"
+            ax1.plot(slice["dates"],slice["voltage"]*1000,".",
+                markersize=8,
+                color = "C1",
+                label = label)
+
+        # plot fits
+        #color iterator
+        i_c = 1
+
+        if method == "quad":
+            for key,fit in self.quad_ABA_fit_dict.items():
+                i_c +=1
+                dates = (fit["start_date"]
+                        + np.array(
+                        [dt.timedelta(seconds = t) for t in fit["t_space"]]) 
+                        )
+                v_series = fit["fit_series"]
+                ax1.plot(dates,v_series*1000,
+                        "-",
+                        #markersize=4,
+                        linewidth=2,
+                        alpha=1,
+                        color = f"C{i_c}",
+                        label = (f"c0: {fit['popt'][0]:.1e},"
+                            + f"c1: {fit['popt'][1]:.1e},"
+                            + f"c2: {fit['popt'][2]:.1e},"
+                            + f"B_offset: {fit['popt'][3]:.3e}")
+                    )
+            plt.legend(shadow=True,loc='lower left', bbox_to_anchor=(0, 1),
+                  fontsize=14)
+        
+        plt.xticks(rotation = 45)
+
+        ax1.set_xlabel(r"Time")
+        ax1.set_ylabel(r"Resistance [$\Omega$]")
+
+        plt.grid(True)
+        plt.tight_layout()
+        format_im = 'png' #'pdf' or png
+        dpi = 300
+        if plot_v_eq == True:
+            plt.savefig(plot_path + "_veq" + '.{}'.format(format_im),
+                        format=format_im, dpi=dpi)
+        else:
+            plt.savefig(plot_path + '.{}'.format(format_im),
+                        format=format_im, dpi=dpi)
+        ax1.cla()
+        return
+
     def plot_all_quad_ABA_fit(self,
                         plot_path,
                         **kwargs

@@ -117,6 +117,52 @@ plt.savefig(out_dir + plotname
 ax1.cla()
 fig.clf()
 plt.close()
+
+# plot a subset of data into shared plot   
+#######
+# TC_lst = [200, 300, 390, 475]
+indicator_list = ["720TC", "390TC",  "0A"]
+filename_list = ["1sccm_" + indicator + ".json" 
+                 for indicator in indicator_list]
+# for TC_lst 44 is a HACK for 0 A ("room temp" =  44 = 297.7K)
+TC_lst = [720,390,  44] 
+T_lst = [TC_to_T_Hack(TC) for TC in TC_lst]
+pd_dict = {}
+# Start plot:
+plotname = "multi_run_power_subset"
+fig = plt.figure(0, figsize=(8,6.5), dpi =300)
+ax1=plt.gca()
+x_label = r"$z_{pos}$ [mm]"
+for i,filename in enumerate(filename_list):
+    print("filename:", filename)
+    pd = p_data_plot_dict(filename)
+    pd_dict[indicator_list[i]] = pd
+    pd_dict[indicator_list[i]]["index"] = i
+    pd_dict[indicator_list[i]]["T"] = T_lst[i]
+    ### ax1
+    ax1.errorbar(pd["z_arr"], pd["p_arr"],yerr = pd["p_err_arr"], fmt = ".",
+                label = (f"{indicator_list[i]} ~ {T_lst[i]:.0f}K"))
+
+
+ax1.set_ylabel(r"power [µW]")
+ax1.set_xlabel(x_label)
+
+ax1.grid(True)
+ax1.legend(shadow=True, fontsize = 13)
+# ax1.tight_layout()
+
+
+fig.tight_layout()
+
+format_im = 'png' #'pdf' or png
+dpi = 300
+plt.savefig(out_dir + plotname
+            + '.{}'.format(format_im),
+            format=format_im, dpi=dpi)
+# plt.show()
+ax1.cla()
+fig.clf()
+plt.close()
 ######
 # print(pd_dict)
 # Define prototype "3-point efficiency"
