@@ -1395,7 +1395,7 @@ Parameters
             if key == 0:
                 w_mean = self.fit_results[method]["w_mean"]
                 w_std = self.fit_results[method]["w_std"]
-                label = ("fit_data" + f", offset w_mean: {w_mean:.3e}" 
+                label = ("fit data" + "$\Delta R$: "+  f": {w_mean:.3e}" 
                         + r"$\pm$" + f"{w_std:.1e}")
             else:
                 label = "_nolegend_"
@@ -1422,13 +1422,13 @@ Parameters
                         linewidth=2,
                         alpha=1,
                         color = f"C{i_c}",
-                        label = (f"c0: {fit['popt'][0]:.1e},"
-                            + f"c1: {fit['popt'][1]:.1e},"
-                            + f"c2: {fit['popt'][2]:.1e},"
-                            + f"B_offset: {fit['popt'][3]:.3e}")
+                        label = (r"$\Delta R$: "
+                                 + f"{fit['popt'][3]:.3e}")
                     )
             plt.legend(shadow=True,loc='lower left', bbox_to_anchor=(0, 1),
-                  fontsize=14)
+                  fontsize=14,
+                  ncol = 2
+                  )
         
         plt.xticks(rotation = 45)
 
