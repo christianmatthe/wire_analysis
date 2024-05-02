@@ -1397,8 +1397,8 @@ Parameters
                 w_std = self.fit_results[method]["w_std"]
                 label = ("fit data, Average:" + "\n"
                          + r"$\Delta R = $ "
-                         +  f"{w_mean* 1e6:.2f}" 
-                         + r"$\pm$" + f"{w_std * 1e6:.2f}" 
+                         +  f"{w_mean* 1e6:.1f}" 
+                         + r"$\pm$" + f"{w_std * 1e6:.1f}" 
                          + r"m$\Omega$"
                         )
             else:
@@ -1428,7 +1428,7 @@ Parameters
                         color = f"C{i_c}",
                         label = (f"{i_c - 1}: "
                                 r"$\Delta R$= "
-                                 + f"{fit['popt'][3] * 1e6:.2f}"
+                                 + f"{fit['popt'][3] * 1e6:.1f}"
                                  + r"m$\Omega$")
                     )
             plt.legend(shadow=True,loc='lower left', bbox_to_anchor=(0, 1),
