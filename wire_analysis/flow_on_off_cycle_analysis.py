@@ -1395,8 +1395,9 @@ Parameters
             if key == 0:
                 w_mean = self.fit_results[method]["w_mean"]
                 w_std = self.fit_results[method]["w_std"]
-                label = ("fit data, \n" + r"Average $\Delta R = $ "
-                         +  f": {w_mean:.3e}" 
+                label = ("fit data," + r"Average $\Delta R = $ "
+                         + "\n"
+                         +  f"{w_mean:.3e}" 
                         + r"$\pm$" + f"{w_std:.1e}" + r"$\Omega$"
                         )
             else:
