@@ -363,7 +363,7 @@ def prep_data_slowdash(filename, dataname,start = 0, end = -1, wire_str = "Wire1
 def prep_data_calib(filename, dataname, data_dir, start = 0, end = -1):
     # This function loads data files in the slowdash json format, and converts
     # them to the same pickled data format as previous data
-    with open(filename,"r") as f:
+    with open(data_dir + filename,"r") as f:
         data = json.load(f)
     try:
         sep_str = "__"
