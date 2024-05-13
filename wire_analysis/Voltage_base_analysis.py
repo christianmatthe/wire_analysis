@@ -360,7 +360,7 @@ def prep_data_slowdash(filename, dataname,start = 0, end = -1, wire_str = "Wire1
     save_data(dataname, data_dict)
     return data_dict
 
-def prep_data_calib(filename, dataname,start = 0, end = -1):
+def prep_data_calib(filename, dataname, data_dir, start = 0, end = -1):
     # This function loads data files in the slowdash json format, and converts
     # them to the same pickled data format as previous data
     with open(filename,"r") as f:
@@ -413,33 +413,9 @@ def prep_data_calib(filename, dataname,start = 0, end = -1):
     data_dict["i_set"] = np.array(i_set_arr)
     data_dict["i_set_str"] = np.array(i_set_str)
 
-    save_data(dataname, data_dict)
+    save_data(dataname, data_dir, data_dict)
     return data_dict
 
-#     t_series, v_series = data[start:end].T[0:2] # select only entry 0 and 1
-
-#     # for every datapoint
-#     if len(data[0]) == 3:
-#             t_series, v_series, r_series = data[start:end].T[0:3]
-#     dates = mpl.dates.num2date(t_series/86400)
-#     data_dict = {"dates":np.array(dates),
-#                 "voltage":np.array(v_series)}
-#     #extract PT_1000 resistance if  it was recorded
-#     if len(data[0]) == 3:
-#         _, _, r_series = data[start:end].T[0:3]
-#         data_dict["R_Pt_1000"] = np.array(r_series)
-
-# #interpolate pressure, does not work. too naive
-# def p_interpolate(p_dict):
-#         t_arr = np.array([date.timestamp() for date in p_dict["dates"]])
-#         f_int = interp1d(t_arr,
-#                         p_dict["pressure"],
-#                         kind = "linear",fill_value="extrapolate"
-#                 )
-#         return f_int
-
-    save_data(dataname, data_dict)
-    return data_dict
 
 def v_range_adjust(data_dict, factor):
     data_dict["voltage"] = factor * data_dict["voltage"]
