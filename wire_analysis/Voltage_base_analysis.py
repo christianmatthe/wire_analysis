@@ -26,15 +26,13 @@ font = {#'family' : 'normal','weight' : 'bold',
         }
 mpl.rc('font', **font)
 
-plot_dir = os.path.dirname(os.path.abspath(__file__)) + os.sep + "output/"
-data_dir = os.path.dirname(os.path.abspath(__file__)) + os.sep + "data/"
 #######################
 
 # Plot with movinng average
 def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
 
-def plot_with_avg(filename, plotname):
+def plot_with_avg(filename, plotname, plot_dir):
     data = np.loadtxt(filename, delimiter= ",")
     t_series, v_series = data.T
     mavg_len = 30 # In seconds
@@ -67,7 +65,7 @@ def plot_with_avg(filename, plotname):
                 format=format_im, dpi=dpi)
     ax1.cla()
 
-def plot_with_dates(filename, plotname,start = 0, end = -1):
+def plot_with_dates(filename, plotname,plot_dir, start = 0, end = -1):
     if type(filename) == type("string"):
         file, ext = os.path.splitext(filename)
         if ext == ".txt":
@@ -143,7 +141,8 @@ def select_date_indices(data_dict,start_date , end_date ):
 
     return start, end
 
-def plot_with_dates_select(data_dict, plotname,start_date, end_date,
+def plot_with_dates_select(data_dict, plotname, plot_dir,
+                           start_date, end_date,
                            utc_offset = 1,
                            large_points = False,
                            defuzz = False,
@@ -265,7 +264,7 @@ def R_to_T(R):
                     )
     return f_int(R)
 
-def plot_Pt_1000_select(data_dict, plotname,start_date, end_date,
+def plot_Pt_1000_select(data_dict, plotname,plot_dir, start_date, end_date,
                            utc_offset = 1
                            ):
     if type(data_dict) == type({"dict":[]}):
@@ -445,12 +444,12 @@ def prep_data_calib(filename, dataname,start = 0, end = -1):
 def v_range_adjust(data_dict, factor):
     data_dict["voltage"] = factor * data_dict["voltage"]
 
-def save_data(dataname, data_dict):
+def save_data(dataname, data_dir, data_dict):
     with open(data_dir + dataname + ".pkl", "wb") as f:
             dill.dump(data_dict, f)
     return data_dict
 
-def load_data(dataname):
+def load_data(dataname, data_dir):
         with open(data_dir + dataname + ".pkl", "rb") as f:
             data_dict = dill.load(f)
         return data_dict
@@ -552,7 +551,8 @@ def data_to_T_dict(data_dict):
                         }
         return T_dict
 
-def plot_T_diff(T_dict, plotname,start_date, end_date,
+def plot_T_diff(T_dict, plotname, plot_dir,
+                start_date, end_date,
                            utc_offset = 1,
                            large_points = False,
                            ):
@@ -591,7 +591,7 @@ def plot_T_diff(T_dict, plotname,start_date, end_date,
     ax1.cla()
 
 
-def plot_with_axes(data_dict, plotname,start_date, end_date,
+def plot_with_axes(data_dict, plotname, plot_dir,start_date, end_date,
                            utc_offset = 1):
 
     ###########
@@ -773,7 +773,8 @@ def make_corr_dict(diff_dict, p_dict):
         return {"dates" : diff_dict["dates"].copy(),
                 "corr" : corr_arr}
 
-def plot_T_diff_p_corr(corr_dict, plotname,start_date, end_date,
+def plot_T_diff_p_corr(corr_dict, plotname, plot_dir,
+                       start_date, end_date,
                            utc_offset = 1,
                            large_points = False,
                            ):
@@ -816,7 +817,8 @@ def plot_T_diff_p_corr(corr_dict, plotname,start_date, end_date,
     ax1.cla()
 
 # plot wire Voltage and Pg60 pressur together
-def plot_V_and_p(data_dict,p_dict, plotname,start_date, end_date,
+def plot_V_and_p(data_dict,p_dict, plotname, plot_dir,
+                 start_date, end_date,
                            utc_offset = 1,
                            large_points = False,
                            p_dict_2 = None,
