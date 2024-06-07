@@ -166,6 +166,7 @@ def integrate_H_on_plane_1D_etaW(x_lims = [-10,10], z_lims = [-2.5e-3,2.5e-3],
                         l_eff = 7.96, theta_max = 90 * degree, 
                         z0 = 0, y0  = 35.17,
                         err = 1e-2, norm_factor = None):
+    #HACK this path does not hold up on other systems
     eta_wire = Beamfit(run_dict_path=(  
         "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis"
         + "\\scripts\\2023-12-18_no_cracking_H2\\run_dicts\\1sccm_390TC.json"
