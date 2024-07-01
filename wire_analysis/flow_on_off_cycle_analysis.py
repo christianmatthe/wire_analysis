@@ -1381,9 +1381,12 @@ Parameters
         for key,slice in self.sliced_dict.items():
             if key == 0:
                 label = "data"
+                date0 = slice["dates"][0]
             else:
                 label = "_nolegend_"
-            ax1.plot(slice["dates"],slice["voltage"]*1000,".",
+            time_diff_min = [(slice["dates"][i] - date0).total_seconds()/60 
+                    for i in range(len(slice["dates"]))]
+            ax1.plot(time_diff_min,slice["voltage"]*1000,".",
                 markersize=8,
                 color = "C0",
                 label = label)
@@ -1403,10 +1406,17 @@ Parameters
                         )
             else:
                 label = "_nolegend_"
-            ax1.plot(slice["dates"],slice["voltage"]*1000,".",
+            # ax1.plot(slice["dates"],slice["voltage"]*1000,".",
+            #     markersize=8,
+            #     color = "C1",
+            #     label = label)
+            time_diff_min = [(slice["dates"][i] - date0).total_seconds()/60 
+                             for i in range(len(slice["dates"]))]
+            ax1.plot(time_diff_min,slice["voltage"]*1000,".",
                 markersize=8,
                 color = "C1",
                 label = label)
+            
 
         # plot fits
         #color iterator
@@ -1415,12 +1425,18 @@ Parameters
         if method == "quad":
             for key,fit in self.quad_ABA_fit_dict.items():
                 i_c +=1
+                # dates = (fit["start_date"]
+                #         + np.array(
+                #         [dt.timedelta(seconds = t) for t in fit["t_space"]]) 
+                #         )
                 dates = (fit["start_date"]
                         + np.array(
                         [dt.timedelta(seconds = t) for t in fit["t_space"]]) 
                         )
+                time_diff_min = [(dates[i] - date0).total_seconds()/60 
+                    for i in range(len(dates))]
                 v_series = fit["fit_series"]
-                ax1.plot(dates- dates[0],v_series*1000,
+                ax1.plot(time_diff_min,v_series*1000,
                         "-",
                         #markersize=4,
                         linewidth=2,
@@ -1438,7 +1454,7 @@ Parameters
         
         plt.xticks(rotation = 45)
 
-        ax1.set_xlabel(r"Time")
+        ax1.set_xlabel(r"Time [min]")
         ax1.set_ylabel(r"Resistance [$\Omega$]")
 
         plt.grid(True)
