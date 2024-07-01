@@ -1420,7 +1420,7 @@ Parameters
                         [dt.timedelta(seconds = t) for t in fit["t_space"]]) 
                         )
                 v_series = fit["fit_series"]
-                ax1.plot(dates,v_series*1000,
+                ax1.plot(dates- dates[0],v_series*1000,
                         "-",
                         #markersize=4,
                         linewidth=2,
