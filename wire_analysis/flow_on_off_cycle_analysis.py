@@ -1454,6 +1454,11 @@ Parameters
         
         plt.xticks(rotation = 45)
 
+        #set x tick spacing to 5 mins
+        tick_spacing = 5
+        import matplotlib.ticker as ticker
+        ax1.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+
         ax1.set_xlabel(r"Time [min]")
         ax1.set_ylabel(r"Resistance [$\Omega$]")
 
