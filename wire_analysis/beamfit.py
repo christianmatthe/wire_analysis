@@ -682,7 +682,7 @@ class Beamfit():
             #         + r", $l_{eff}=$" + l_eff_str)
             # HACK for paper plot:
             ax1.plot(z_space, P_space_eye, "r-", 
-                     label = r"$P_{\rm{rec}}(l_{rm{eff}}=$" + l_eff_str + ")"
+                     label = r"$P_{\rm{rec}}(l_{\rm{eff}}=$" + l_eff_str + ")"
                    )
 
             #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [$\Omega$/µW],
