@@ -657,24 +657,34 @@ class Beamfit():
             x_label = r"central angle [deg]"
             z_arr = np.arctan((z_arr - z0) / y0) / self.degree
             z_space = np.arctan((z_space - z0) / y0) / self.degree
-            ax1.axvline(theta_max, label=r"$\theta_{max} = $"
-                        + f"{theta_max:.2f} [deg]", 
-                        color = "gray", alpha = 0.6, ls = "--")
-            ax2.axvline(theta_max, label=r"$\theta_{max}$", 
-                        color = "gray", alpha = 0.6, ls = "--")
+            # HACK for paper plot
+            # ax1.axvline(theta_max, label=r"$\theta_{max} = $"
+            #             + f"{theta_max:.2f} [deg]", 
+            #             color = "gray", alpha = 0.6, ls = "--")
+            # ax2.axvline(theta_max, label=r"$\theta_{max}$", 
+            #             color = "gray", alpha = 0.6, ls = "--")
         else:
             x_label = r"$z_{pos}$ [mm]"
         ### ax1
+        # ax1.errorbar(z_arr, P_arr,yerr = P_err_arr, fmt = ".",
+        #             label = (r"data, $\chi^2_{red}$"
+        #                     +" = {:2.3f} ".format(chi2_red)))
+        # HACK for paper plot
         ax1.errorbar(z_arr, P_arr,yerr = P_err_arr, fmt = ".",
-                    label = r"data, $\chi^2_{red}$"+" = {:2.3f} ".format(chi2_red))
+            label = (r"data".format(chi2_red)))
 
         # Plot Fit
         #xdata=p_arr
         if l_eff_str == None:
             ax1.plot(z_space, P_space_eye, "r-", label = r"$P_{fit}$")
         else:
-            ax1.plot(z_space, P_space_eye, "r-", label = r"$P_{fit}$" 
-                    + r", $l_{eff}=$" + l_eff_str
+            # ax1.plot(z_space, P_space_eye, "r-", label = r"$P_{fit}$" 
+            #         + r", $l_{eff}=$" + l_eff_str)
+            # HACK for paper plot:
+            ax1.plot(z_space, P_space_eye, "r-", 
+                     label = r"$P_{\rm{rec}}(l_{rm{eff}}=$" + l_eff_str + ")"
+                   )
+
             #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [$\Omega$/µW],
             #  R$_0$={:5.3f} $\pm$ {:2.1e} [$\Omega$]'''.format(
             #      popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
