@@ -689,7 +689,7 @@ class Beamfit():
             #  R$_0$={:5.3f} $\pm$ {:2.1e} [$\Omega$]'''.format(
             #      popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
             #           ))
-                    )
+                    
         if P_space_compare is None:
             pass
         else:
