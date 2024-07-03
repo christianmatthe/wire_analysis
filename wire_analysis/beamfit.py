@@ -772,6 +772,7 @@ class Beamfit():
         ax1.errorbar(z_arr, P_arr,yerr = P_err_arr, fmt = ".",
                     label = (r"data, $\chi^2_{red}$"
                             +" = {:2.3f} ".format(chi2_red)))
+        ax1.legend(shadow=True, fontsize = 13)
         plt.savefig(self.out_dir + plotname
             + '_chi2.{}'.format(format_im),
             format=format_im, dpi=dpi)
