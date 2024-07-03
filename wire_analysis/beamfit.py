@@ -768,6 +768,14 @@ class Beamfit():
                     + '.{}'.format(format_im),
                     format=format_im, dpi=dpi)
         # plt.show()
+        # Reintroduce diiagnostics plot with chi sqared:
+        ax1.errorbar(z_arr, P_arr,yerr = P_err_arr, fmt = ".",
+                    label = (r"data, $\chi^2_{red}$"
+                            +" = {:2.3f} ".format(chi2_red)))
+        plt.savefig(self.out_dir + plotname
+            + '_chi2.{}'.format(format_im),
+            format=format_im, dpi=dpi)
+
         ax1.cla()
         fig.clf()
         plt.close()
