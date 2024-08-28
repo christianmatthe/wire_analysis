@@ -654,7 +654,7 @@ class Beamfit():
 
         if plot_angles == True:
             y0 = self.y0_default
-            x_label = r"central angle [deg]"
+            x_label = r"Central angle [deg]"
             z_arr = np.arctan((z_arr - z0) / y0) / self.degree
             z_space = np.arctan((z_space - z0) / y0) / self.degree
             # HACK for paper plot
@@ -698,7 +698,7 @@ class Beamfit():
                     )
 
 
-        ax1.set_ylabel(r"power [µW]")
+        ax1.set_ylabel(r"Power [µW]")
         ax1.set_xlabel(x_label)
 
         ax1.grid(True)
@@ -800,7 +800,7 @@ class Beamfit():
                     label = (r"data"))
 
 
-        ax1.set_ylabel(r"power [µW]")
+        ax1.set_ylabel(r"Power [µW]")
         ax1.set_xlabel(x_label)
 
         ax1.grid(True)
