@@ -170,6 +170,17 @@ class Beamfit():
             ]
                 )
         return result
+
+    def beam_profile_jw(self, theta, l_eff, theta_max):
+        # Theta needs to be connverted to array if it isn't already
+        theta = np.array(np.abs(theta))
+        cond = (theta < theta_max) & (theta != 0)
+        result = np.piecewise(theta, 
+            [theta == 0, cond, theta >= theta_max],
+            [
+                1,self.jw(theta[cond], l_eff), 0   
+            ]
+                )
     
     # Introduce wire_sensitivity options
 
