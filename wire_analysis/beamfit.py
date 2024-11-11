@@ -181,6 +181,7 @@ class Beamfit():
                 1,self.jw(theta[cond], l_eff), 0   
             ]
                 )
+        return result
     
     # Introduce wire_sensitivity options
 

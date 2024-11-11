@@ -487,6 +487,11 @@ beamfit.save_json_run_dict()
 # print("p_excess_lst", p_excess_lst)
 # print("p_arr=np.array(p_excess_lst)", np.array(p_excess_lst).flatten())
 
+# HACK
+# Quickly replace beam_profile_model
+print("before", beamfit.beam_profile(0,10,90))
+beamfit.beam_profile = beamfit.beam_profile_jw
+print("after", beamfit.beam_profile(0,10,90))
 print("custom penumbra fit wait ~??min")
 beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
                          p_arr=np.array(p_excess_lst).flatten()
