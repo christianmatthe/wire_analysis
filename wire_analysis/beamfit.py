@@ -816,7 +816,7 @@ class Beamfit():
                     label = (r"data, $\chi^2_{red}$"
                             +" = {:2.3f} ".format(chi2_red)))
         handles, labels = ax1.get_legend_handles_labels()
-        ax1.legend([handles[i] for i in  [0,2]],[handles[i] for i in  [0,2]],
+        ax1.legend([handles[i] for i in  [0,2]],[labels[i] for i in  [0,2]],
             shadow=True, fontsize = 13)
         plt.savefig(self.out_dir + plotname
             + '_chi2.{}'.format(format_im),
