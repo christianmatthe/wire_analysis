@@ -183,6 +183,21 @@ class Beamfit():
                 )
         return result
     
+    def beam_profile_eibl062(self, theta, l_eff, theta_max):
+        # Theta needs to be connverted to array if it isn't already
+        theta = np.array(np.abs(theta))
+        cond = (theta < theta_max) & (theta != 0)
+        result = np.piecewise(theta, 
+            [theta == 0, cond, theta >= theta_max],
+            [
+                1,
+                0.62*self.jd(theta[cond], l_eff) 
+                + self.jw(theta[cond], l_eff),
+                0   
+            ]
+                )
+        return result
+    
     # Introduce wire_sensitivity options
 
   

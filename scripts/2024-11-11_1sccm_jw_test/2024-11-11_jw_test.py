@@ -490,12 +490,33 @@ beamfit.save_json_run_dict()
 # HACK
 # Quickly replace beam_profile_model
 print("before", beamfit.beam_profile(0,10,90))
-beamfit.beam_profile = beamfit.beam_profile_jw
+# def custom_beam_profile(theta, l_eff, theta_max):
+#         # Theta needs to be converted to array if it isn't already
+#         theta = np.array(np.abs(theta))
+#         cond = (theta < theta_max) & (theta != 0)
+#         result = np.piecewise(theta, 
+#             [theta == 0, cond, theta >= theta_max],
+#             [
+#             1,
+#             beamfit.jd(theta[cond], l_eff) 
+#             + 0* beamfit.jw(theta[cond], l_eff),
+#             0   
+#             ]
+#                 )
+#         return result
+
+# beamfit.beam_profile = custom_beam_profile
+# beamfit.beam_profile = beamfit.beam_profile_jw
+beamfit.beam_profile = lambda theta, l_eff, theta_max:(
+            beamfit.beam_profile(theta, l_eff, theta_max) 
+            + (1/0.62)*beamfit.beam_profile_jw(theta, l_eff, theta_max)
+                ) 
 print("after", beamfit.beam_profile(0,10,90))
 print("custom penumbra fit wait ~??min")
 beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
                          p_arr=np.array(p_excess_lst).flatten()
                         , p_err_arr = np.array(p_excess_err_lst).flatten()
+                        ,plotname = "Eibl_beam_fit_0.62jd_plot"
                         )
 # print("default fit wait ~1min")
 # # beamfit.default_fit()
