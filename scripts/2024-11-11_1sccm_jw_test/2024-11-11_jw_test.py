@@ -507,10 +507,7 @@ print("before", beamfit.beam_profile(0,10,90))
 
 # beamfit.beam_profile = custom_beam_profile
 # beamfit.beam_profile = beamfit.beam_profile_jw
-beamfit.beam_profile = lambda theta, l_eff, theta_max:(
-            beamfit.beam_profile(theta, l_eff, theta_max) 
-            + (1/0.62)*beamfit.beam_profile_jw(theta, l_eff, theta_max)
-                ) 
+beamfit.beam_profile = beamfit.beam_profile_eibl062
 print("after", beamfit.beam_profile(0,10,90))
 print("custom penumbra fit wait ~??min")
 beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),

@@ -198,6 +198,21 @@ class Beamfit():
                 )
         return result
     
+    def beam_profile_eibl062_inverse(self, theta, l_eff, theta_max):
+        # Theta needs to be connverted to array if it isn't already
+        theta = np.array(np.abs(theta))
+        cond = (theta < theta_max) & (theta != 0)
+        result = np.piecewise(theta, 
+            [theta == 0, cond, theta >= theta_max],
+            [
+                1,
+                self.jd(theta[cond], l_eff) 
+                + 0.62*self.jw(theta[cond], l_eff),
+                0   
+            ]
+                )
+        return result
+    
     # Introduce wire_sensitivity options
 
   
@@ -797,9 +812,12 @@ class Beamfit():
         # plt.show()
         # Reintroduce diiagnostics plot with chi sqared:
         ax1.errorbar(z_arr, P_arr,yerr = P_err_arr, fmt = ".",
+                     color = "C0",
                     label = (r"data, $\chi^2_{red}$"
                             +" = {:2.3f} ".format(chi2_red)))
-        ax1.legend(shadow=True, fontsize = 13)
+        handles, labels = ax1.get_legend_handles_labels()
+        ax1.legend([handles[i] for i in  [0,2]],[handles[i] for i in  [0,2]],
+            shadow=True, fontsize = 13)
         plt.savefig(self.out_dir + plotname
             + '_chi2.{}'.format(format_im),
             format=format_im, dpi=dpi)
