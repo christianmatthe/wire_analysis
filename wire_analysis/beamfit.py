@@ -74,6 +74,7 @@ class Beamfit():
         self.init_eta_wire_sim()
             #Allow for later adjustment of default eta 
         self.eta_wire_default = self.eta_wire_sim
+        self.init_penumbra()
 
         #load run_dict
         self.run_dict = load_json_dict(run_dict_path)
@@ -268,6 +269,36 @@ class Beamfit():
         self.eta_wire_sim = interp1d(x_pos_seg, signal_arr_norm_1, 
                             fill_value = "extrapolate")
         return 
+    
+    def init_penumbra(self,radius_cap = 0.5, 
+                      distance_cap_housing = 7.1, radius_housing = 3.0):
+        # Approximates visible capillary fraction as a straight line passing
+        # over a circle
+        # and linearly interpolates the angles within the penumbra
+
+        # calculate fraction of the capillary that is visible under a
+        # given angle
+        # Presumes capillary to be centered on openning  in HABS housing
+        # radius_cap = 0.5 # mm
+        # distance_cap_housing = 7.1 # mm
+        # radius_housing = 3.0 # mm
+
+        # calculate edges of penumbra
+        # inner (close) edge
+        theta_inner = np.arctan((radius_housing - radius_cap)
+                                /distance_cap_housing)
+        theta_outer = np.arctan((radius_housing + radius_cap)
+                                /distance_cap_housing)
+
+        degree = np.pi/180 # convert form rad to degree
+        print("inner edge:", theta_inner, theta_inner / degree)
+        print("outer edge:", theta_outer, theta_outer / degree)#
+        self.theta_inner = theta_inner
+        self.theta_outer = theta_outer
+        # speed up by eliminating  this calculation
+        # self.theta_inner = 0.3385556949116842 # 19.3978 deg 
+        # self.theta_outer = 0.45799795159722173 # 26.2413 deg
+        return (theta_inner, theta_outer)
 
 
     # Define Integrated Power on wire with variable eta (wire sensitivity)
@@ -324,8 +355,10 @@ class Beamfit():
         # print("inner edge:", theta_inner, theta_inner / degree)
         # print("outer edge:", theta_outer, theta_outer / degree)#
         # speed up by eliminating  this calculation
-        theta_inner = 0.3385556949116842 # 19.3978 deg 
-        theta_outer = 0.45799795159722173 # 26.2413 deg
+        # theta_inner = 0.3385556949116842 # 19.3978 deg 
+        # theta_outer = 0.45799795159722173 # 26.2413 deg
+        theta_inner = self.theta_inner
+        theta_outer = self.theta_outer
         if np.abs(theta) <= theta_inner:
             fraction = 1
         elif np.abs(theta) >= theta_outer:

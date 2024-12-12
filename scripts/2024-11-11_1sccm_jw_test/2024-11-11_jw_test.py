@@ -498,32 +498,41 @@ beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
 # Quickly replace beam_profile_model
 print("before", beamfit.beam_profile(0,10,90))
 
-beamfit.beam_profile = beamfit.beam_profile_eibl062_inverse
+beamfit.beam_profile = beamfit.beam_profile_jw
 print("after", beamfit.beam_profile(0,10,90))
 print("custom penumbra fit wait ~??min")
 beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
                          p_arr=np.array(p_excess_lst).flatten()
                         , p_err_arr = np.array(p_excess_err_lst).flatten()
-                        ,plotname = "Eibl_inverse_beam_fit_0.62jw_plot"
+                        ,plotname = "jw_beam_fit_plot"
                         )
 
-beamfit.beam_profile = beamfit.beam_profile_eibl062
-print("after", beamfit.beam_profile(0,10,90))
-print("custom penumbra fit wait ~??min")
-beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
-                         p_arr=np.array(p_excess_lst).flatten()
-                        , p_err_arr = np.array(p_excess_err_lst).flatten()
-                        ,plotname = "Eibl_beam_fit_0.62jd_plot"
-                        )
+# beamfit.beam_profile = beamfit.beam_profile_eibl062_inverse
+# print("after", beamfit.beam_profile(0,10,90))
+# print("custom penumbra fit wait ~??min")
+# beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
+#                          p_arr=np.array(p_excess_lst).flatten()
+#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
+#                         ,plotname = "Eibl_inverse_beam_fit_0.62jw_plot"
+#                         )
 
-beamfit.beam_profile = beamfit.beam_profile_eibl062_inverse
-print("after", beamfit.beam_profile(0,10,90))
-print("custom penumbra fit wait ~??min")
-beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
-                         p_arr=np.array(p_excess_lst).flatten()
-                        , p_err_arr = np.array(p_excess_err_lst).flatten()
-                        ,plotname = "Eibl_inverse_beam_fit_0.62jw_plot"
-                        )
+# beamfit.beam_profile = beamfit.beam_profile_eibl062
+# print("after", beamfit.beam_profile(0,10,90))
+# print("custom penumbra fit wait ~??min")
+# beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
+#                          p_arr=np.array(p_excess_lst).flatten()
+#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
+#                         ,plotname = "Eibl_beam_fit_0.62jd_plot"
+#                         )
+
+# beamfit.beam_profile = beamfit.beam_profile_eibl062_inverse
+# print("after", beamfit.beam_profile(0,10,90))
+# print("custom penumbra fit wait ~??min")
+# beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
+#                          p_arr=np.array(p_excess_lst).flatten()
+#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
+#                         ,plotname = "Eibl_inverse_beam_fit_0.62jw_plot"
+#                         )
 # print("default fit wait ~1min")
 # # beamfit.default_fit()
 # beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
