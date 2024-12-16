@@ -291,8 +291,8 @@ class Beamfit():
                                 /distance_cap_housing)
 
         degree = np.pi/180 # convert form rad to degree
-        print("inner edge:", theta_inner, theta_inner / degree)
-        print("outer edge:", theta_outer, theta_outer / degree)#
+        # print("inner edge:", theta_inner, theta_inner / degree)
+        # print("outer edge:", theta_outer, theta_outer / degree)#
         self.theta_inner = theta_inner
         self.theta_outer = theta_outer
         # speed up by eliminating  this calculation
@@ -334,29 +334,6 @@ class Beamfit():
 
     def visible_fraction(self, theta):
         # HACK the current implementation is merely an approximation
-        # Approximates visible capillary fraction as a straight line passing
-        # over a circle
-        # and linearly interpolates the angles within the penumbra
-
-        # calculate fraction of the capillary that is visible under a
-        # given angle
-        # Presumes capillary to be centered on openning  in HABS housing
-        # radius_cap = 0.5 # mm
-        # distance_cap_housing = 7.1 # mm
-        # radius_housing = 3.0 # mm
-
-        # # calculate edges of penumbra
-        # # inner (close) edge
-        # theta_inner = np.arctan((radius_housing - radius_cap)
-        #                         /distance_cap_housing)
-        # theta_outer = np.arctan((radius_housing + radius_cap)
-        #                         /distance_cap_housing)
-
-        # print("inner edge:", theta_inner, theta_inner / degree)
-        # print("outer edge:", theta_outer, theta_outer / degree)#
-        # speed up by eliminating  this calculation
-        # theta_inner = 0.3385556949116842 # 19.3978 deg 
-        # theta_outer = 0.45799795159722173 # 26.2413 deg
         theta_inner = self.theta_inner
         theta_outer = self.theta_outer
         if np.abs(theta) <= theta_inner:
