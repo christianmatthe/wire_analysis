@@ -425,6 +425,46 @@ class Beamfit():
                                 epsabs=1e-1, epsrel=1e-1)[0]
         return A * result + P_0
     
+    def P_int_penumbra_3par(self,
+              z_pos, l_eff, theta_max, z0, A, P_0,
+              d_ch, r_h, r_c,
+              y0 = None, # Set to constant for simplicity 
+              eta = None
+                     ):
+        # Attempt to model that the Capillary gets obscured by its housing 
+        # in parts and not all at once
+        if eta is None:
+            eta = self.eta_wire_default
+        if y0 is None:
+            y0 = self.y0_default
+        
+        distance_cap_housing = d_ch
+        radius_cap = r_c # mm
+        radius_housing = r_h # mm
+        theta_inner = np.arctan((radius_housing - radius_cap)
+                                /distance_cap_housing)
+        theta_outer = np.arctan((radius_housing + radius_cap)
+                                /distance_cap_housing)
+
+        # Edit of P_int_fast_array with selectabel eta
+        z_space = z_pos
+        result = np.zeros_like(z_space)
+        for i,z_pos in enumerate(z_space): 
+            def theta(lw):
+                return np.arctan(np.sqrt(lw ** 2 + (z_pos - z0) ** 2) / y0)
+            integrant = lambda lw: ((self.beam_profile(theta(lw), l_eff, 
+                                                       theta_max) 
+                                    * np.cos(theta(lw))**3) 
+                                    # apply "visible capillary fraction"
+                                    * self.visible_fraction(theta(lw),
+                                        theta_inner = theta_inner, 
+                                        theta_outer = theta_outer)
+                                    # Multiply by eta_wire
+                                    * eta(lw)
+                                            )   
+            result[i] = integrate.quad(integrant, -10, 10,
+                                epsabs=1e-1, epsrel=1e-1)[0]
+        return A * result + P_0
 
     # define dual fit 
     def P_int_2_component(self,
@@ -716,7 +756,7 @@ class Beamfit():
             l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
                      + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
                      plotname = plotname)
-        return
+        return (popt_abs, pcov_abs)
     
     def fit_d_ch(self,z_arr, p_arr, p_err_arr, 
                         plotname = "fit_d_ch_plot"
@@ -796,7 +836,89 @@ class Beamfit():
             l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
                      + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
                      plotname = plotname)
-        return
+        return (popt_abs, pcov_abs)
+    
+    def fit_3par_penumbra(self,z_arr, p_arr, p_err_arr, 
+                        plotname = "fit_3par_penumb_plot"
+                     ):
+        # Crude function for fitting a dataset not equal to the run dict data
+        # file. I suppose that really should not be the intended use case. 
+        # mmmmmmh
+        rd = self.run_dict
+        # ######################################
+        # # Load from newly reformatted result dict files
+        # extractor_dict_unsorted = load_extractor_dict_json(
+        #                         rd["extractor_dict_path"])
+        # HACK brew up an equivalently formated dict:
+        sort_this_dict = {} 
+        sort_this_dict["p_arr"] = p_arr 
+        sort_this_dict["p_err_arr"] = p_err_arr 
+        # ##############
+        z_array_unsorted = z_arr
+
+        # Sort these:
+        z_arr, sorted_dict = sort_by_z_list(z_array_unsorted,
+                                            sort_this_dict)
+
+        P_arr = sorted_dict["p_arr"]
+        P_err_arr = sorted_dict["p_err_arr"]
+
+        [a,b,c] = rd["selection_indices"]
+        #neglegt leading selected points
+        P_arr = P_arr[a:b:c]
+        P_err_arr = P_err_arr[a:b:c]
+        z_arr = z_arr[a:b:c]
+
+        # initiate fit parameters
+        l_eff = rd["fit_start"]["l_eff"]
+        theta_max = rd["fit_start"]["theta_max"]
+        z0 = rd["fit_start"]["z0"]
+        A = rd["fit_start"]["A"]
+        P_0 = rd["fit_start"]["P_0"]
+        d_ch_0 = 7.1
+        r_h_0 = 3.0
+        r_c_0 = 0.5
+
+        A_bound = rd["fit_start"]["A_bound"]
+        # ##### All parameters except theta_max
+        P_int_fit = lambda z_space, l_eff, A , z0, P_0, d_ch, r_h, r_c: (
+            self.P_int_penumbra_3par(
+                z_space, l_eff, theta_max, z0, A, P_0, d_ch, r_h, r_c))
+
+        # Use errors as absolute to get proper error estimation
+        popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
+                            sigma = P_err_arr,
+                            absolute_sigma= False,
+                            p0 = [l_eff, A,  z0, P_0, d_ch_0], 
+                            bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1,
+                                     d_ch_0 - 1, r_h_0 * 0.8, r_c_0 * 0.8],
+                                    [20,  A_bound[1],  z0 + 1, P_0 + 0.1,
+                                     d_ch_0 + 1, r_h_0 * 1.2, r_c_0 * 1.2])
+                            )
+        ######
+
+        print(popt_abs, pcov_abs)
+        for i, p in enumerate(popt_abs):
+            print(f"parameter {i:.0f}: {p:.5f}"
+                +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
+        # save to file
+        self.save_fit_results(popt_abs, pcov_abs)
+            
+        #### plot
+        z_space = np.linspace(-11,20,num=100)
+
+        P_space_eye= P_int_fit(z_space, *popt_abs)
+        P_arr_eye = P_int_fit(z_arr, *popt_abs)
+
+        # Angle plot
+        self.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
+            , z_space,P_space_eye, scale_residuals=True, 
+            plot_angles=True, z0=popt_abs[2],
+            theta_max=theta_max/self.degree,
+            l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
+                     + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
+                     plotname = plotname)
+        return (popt_abs, pcov_abs)
 
 
     #define plottign function:
