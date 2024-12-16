@@ -889,7 +889,7 @@ class Beamfit():
         popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
                             sigma = P_err_arr,
                             absolute_sigma= False,
-                            p0 = [l_eff, A,  z0, P_0, d_ch_0], 
+                            p0 = [l_eff, A,  z0, P_0, d_ch_0, r_h_0, r_c_0], 
                             bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1,
                                      d_ch_0 - 1, r_h_0 * 0.8, r_c_0 * 0.8],
                                     [20,  A_bound[1],  z0 + 1, P_0 + 0.1,
