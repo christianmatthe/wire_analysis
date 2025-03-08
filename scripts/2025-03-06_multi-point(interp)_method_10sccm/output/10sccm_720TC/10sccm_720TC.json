@@ -1,0 +1,78 @@
+{
+    "out_dir_base": "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis\\scripts\\2025-03-06_multi-point(interp)_method_10sccm\\output\\",
+    "analysis_run_name": "10sccm_720TC",
+    "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2023-04-27_10sccm_15A_TC_z-scan_jf+hg_wire_recalib_38zlist\\extractor_dict.json",
+    "z_list_unsorted": [
+        -11,
+        -10,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        -4,
+        -3.5,
+        -3,
+        -2.5,
+        -2,
+        -1.5,
+        -1,
+        -0.5,
+        0,
+        0.5,
+        1,
+        1.5,
+        2,
+        2.5,
+        3,
+        3.5,
+        4,
+        4.5,
+        5,
+        5.5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        16,
+        18,
+        20
+    ],
+    "selection_indices": [
+        0,
+        100000,
+        1
+    ],
+    "fit_start": {
+        "l_eff": 2.8,
+        "theta_max": 0.41015237421866746,
+        "z0": 1.51,
+        "A": 0.1,
+        "P_0": -0.0,
+        "y0": 35.17,
+        "A_bound": [
+            0.01,
+            0.2
+        ]
+    },
+    "fit_result": {
+        "l_eff": 11.536590048046483,
+        "A": 0.19999999999985105,
+        "z0": 0.5100000000000001,
+        "P_0": -0.09999999999999999,
+        "theta_max": 0.41015237421866746,
+        "y0": 35.17
+    },
+    "fit_result_errors": {
+        "l_eff": 22.012428184796295,
+        "A": 0.26818361221208226,
+        "z0": 2.28817285622625,
+        "P_0": 0.27718205294251036,
+        "theta_max": null,
+        "y0": null
+    }
+}
