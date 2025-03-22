@@ -38,12 +38,27 @@ def jd(theta, l_eff):
     return np.cos(theta) * U(theta, l_eff)
 
 def jw(theta, l_eff):
-    result = (
-    (4/(3*np.pi))*(1-1/(2*l_eff + 1)) * (1/l_eff) 
-    * (np.cos(theta)**2 / np.sin(theta)) 
-    * (1-V(theta, l_eff))
-    + (1/(2*l_eff + 1))*np.cos(theta) * (1-U(theta, l_eff))
-    )
+    # result = (
+    # (4/(3*np.pi))*(1-1/(2*l_eff + 1)) * (1/l_eff) 
+    # * (np.cos(theta)**2 / np.sin(theta)) 
+    # * (1-V(theta, l_eff))
+    # + (1/(2*l_eff + 1))*np.cos(theta) * (1-U(theta, l_eff))
+    # )
+    jw_lambda = lambda theta, l_eff: (
+        (4/(3*np.pi))*(1-1/(2*l_eff + 1)) * (1/l_eff) 
+        * (np.cos(theta)**2 / np.sin(theta)) 
+        * (1-V(theta, l_eff))
+        + (1/(2*l_eff + 1))*np.cos(theta) * (1-U(theta, l_eff))
+        )
+
+    theta = np.array(np.abs(theta))
+    cond = (theta != 0)
+    result = np.piecewise(theta, 
+        [theta == 0, cond],
+        [
+            0,jw_lambda(theta[cond], l_eff),
+        ]
+            )
     return result
 
 def j(theta, l_eff):

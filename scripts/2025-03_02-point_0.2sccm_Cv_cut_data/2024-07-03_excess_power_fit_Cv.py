@@ -1,10 +1,6 @@
-# Based on 2024-01-02_3-point-method
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-
-from scipy.optimize import curve_fit
-from scipy.interpolate import interp1d
 
 import wire_analysis as wa
 from wire_analysis.utils import load_json_dict, load_extractor_dict_json
@@ -28,7 +24,6 @@ mpl.rc('font', **font)
 work_dir = "./run_dicts/"
 out_dir = "./output/"
 
-# 10 sccm version, with required interpolation (WIP)
 
 
 for filename in os.listdir(work_dir):
@@ -75,12 +70,12 @@ def p_data_plot_dict(filename):
 
 # plot data into shared plot   
 #######
-# TC_lst = [200, 300, 390, 475]
-indicator_list = ["720TC", "390TC",  "0A"]
-filename_list = ["10sccm_" + indicator + ".json" 
+indicator_list = ["715TC","390TC", "0A"]
+filename_list = ["02sccm_" + indicator + ".json" 
                  for indicator in indicator_list]
 # for TC_lst 44 is a HACK for 0 A ("room temp" =  44 = 297.7K)
-TC_lst = [720, 390,  44] 
+#TC_lst = [715, 475, 390, 300, 200, 44] 
+TC_lst = [715, 390, 44] 
 T_lst = [TC_to_T_Hack(TC) for TC in TC_lst]
 pd_dict = {}
 # Start plot:
@@ -118,83 +113,58 @@ plt.savefig(out_dir + plotname
 ax1.cla()
 fig.clf()
 plt.close()
-
 ######
 # print(pd_dict)
-def multi_interp_point_CEB(pd_dict,
-                    H2_indicators = [ "390TC", "0A"],
-                    H_indicators = ["720TC"],
-                    ac_H = 1, gamma_H = 1):
+# Define prototype "3-point efficiency"
+def three_point_CEB(low_pd, mid_pd, high_pd, ac_H = 1, gamma_H = 1):
     # align data on z-axis (of most sparese data set)
     z_lst = []
     p_excess_lst = []
     p_excess_err_lst = []
     ceb_lst = []
     ceb_err_lst = []
-    high_pd = pd_dict[H_indicators[0]]
-    #Ts H2
-    Ts = [pd_dict[key]["T"] for key in H2_indicators]
-
-    #interpolate the low T runs
-    for key in H2_indicators:
-        pd_dict[key]["interp"] = interp1d(
-            x=pd_dict[key]["z_arr"],y = pd_dict[key]["p_arr"])
-        pd_dict[key]["interp_err"] = interp1d(
-            x=pd_dict[key]["z_arr"],y = pd_dict[key]["p_err_arr"])
-    # z_list, result_dict = sort_by_z_list(z_list_unsorted, result_dict)
-    # print("sorted_results:", {"z_list": np.array(z_list)}, result_dict)
-
-    # Define range
-    domain = (max([min(pd_dict[key]["z_arr"]) for key in H2_indicators]),
-              min([max(pd_dict[key]["z_arr"]) for key in H2_indicators])
-              )
-
     for i,z in enumerate(high_pd["z_arr"]):
-        if domain[0] <= z <= domain[1]:
-        # # checksum = 0
-        # # for key in H2_indicators:
-        # #     if z in pd_dict[key]["z_arr"]:
-        # #         checksum += 1
-        # if checksum == len(H2_indicators):
-        #     i_dict = {key:np.where(pd_dict[key]["z_arr"] == z) 
-        #               for key in H2_indicators}
-            # i_low = np.where(low_pd["z_arr"] == z)
-            # i_mid = np.where(mid_pd["z_arr"] == z)
+        if (z in low_pd["z_arr"]) and (z in mid_pd["z_arr"]):
+            i_low = np.where(low_pd["z_arr"] == z)
+            i_mid = np.where(mid_pd["z_arr"] == z)
             z_lst.append(z)
             #print(z_lst)
             #print(i,i_low,i_mid)
-            #print(i_dict)
 
-            # multi point line fit
-
+            # 2 point line fit
+            Ts = [low_pd["T"], mid_pd["T"]]
             xs = Ts
-            ps = np.array([pd_dict[key]["interp"](z)
-                    for key in H2_indicators]).flatten()
-            ps_err = np.array([pd_dict[key]["interp_err"](z)
-                    for key in H2_indicators]).flatten()
+            ps = [low_pd["p_arr"][i_low], mid_pd["p_arr"][i_mid]]
             ys = ps
-            # print("Ts", Ts, np.shape(Ts))
-            # print( "ps", ps, np.shape(ps))
-            # print( "ps_err", ps_err,  np.shape(ps_err))
-            #Replace with real fit
-            fit_func = lambda T,a,b : a*Cv(T)*T + b
-
-            popt, pcov = curve_fit(fit_func, Ts, ps
-                                ,sigma = ps_err
-                                , absolute_sigma = True
-                                )
-            p_fit = lambda T: popt[0]*Cv(T)*T + popt[1]
-
-            a_err = np.sqrt(pcov[0,0])
-            b_err = np.sqrt(pcov[1,1])
-
-            p_fit_err =  lambda T : np.sqrt((a_err *Cv(T) * T)**2 + b_err**2)
+            ### Old simple and correct within its small scope
+            # m = (ys[1] - ys[0])/(xs[1] - xs[0])
+            # b = ys[0] - xs[0] * m
+            # p_fit = lambda T : m * T + b
+            # # These errors are in fact correlated in this scheeme
+            # m_err = np.sqrt((low_pd["p_err_arr"][i_low]/(xs[1] - xs[0]))**2 
+            #                 + (mid_pd["p_err_arr"][i_mid]/(xs[1] - xs[0]))**2)
+            # b_err = np.sqrt(mid_pd["p_err_arr"][i_mid]**2
+            #                 + (xs[0] * m_err)**2)
+            # p_fit_err =  lambda T : m_err * T + b_err
+            #### ABsolute mega HACK
+            # Rescale the temmperature axis (x) by Cv(T)/Cv(T0) 
+            # to include its effect
+            xs = xs * Cv(xs)
+            m = (ys[1] - ys[0])/(xs[1] - xs[0])
+            b = ys[0] - xs[0] * m
+            p_fit = lambda T : m * Cv(T) * T + b
+            # These errors are in fact correlated in this scheeme
+            m_err = np.sqrt((low_pd["p_err_arr"][i_low]/(xs[1] - xs[0]))**2 
+                            + (mid_pd["p_err_arr"][i_mid]/(xs[1] - xs[0]))**2)
+            b_err = np.sqrt(mid_pd["p_err_arr"][i_mid]**2
+                            + (xs[0] * m_err)**2)
+            p_fit_err =  lambda T : m_err * Cv(T)* T + b_err
 
             #Calculate excess power at high T
             p_excess = high_pd["p_arr"][i] - p_fit(high_pd["T"])
             p_excess_lst.append(p_excess)
             p_excess_err = np.sqrt(high_pd["p_err_arr"][i]**2
-                            + (p_fit_err(high_pd["T"]))**2
+                            + (p_fit_err(high_pd["T"])[0])**2
                             )
             p_excess_err_lst.append(p_excess_err)
             # Calculate cracking efficiency based on comparison to H2 heating
@@ -205,57 +175,57 @@ def multi_interp_point_CEB(pd_dict,
             # 2. Fitting based on separate Background(300K) + H2(1250K) + H1
             # THis is the basic and bodgy method previously called
             # CEB (cracking efficinecy bodge)
-            # # Calculate p_H2 # TODO Fix
-            # p_H2 = lambda T : p_fit(T) - p_fit(low_pd["T"])
-            # p_H2_err = lambda T : np.sqrt(p_fit_err(T)**2 
-            #                               + p_fit_err(low_pd["T"])**2
-            #                             )
+            # Calculate p_H2
+            p_H2 = lambda T : p_fit(T) - p_fit(low_pd["T"])
+            p_H2_err = lambda T : np.sqrt(p_fit_err(T)**2 
+                                          + p_fit_err(low_pd["T"])**2
+                                        )
             
-            # # Calculate energy delivered per H2
-            # # ac_H2 estimated from my own measurements
-            # # TODO do clean calculation for future use
-            # ac_H2 = 0.45
-            # #literature ac_H2 is 0.38 in one paper (at one temp)
-            # N_A = 6.02214076e23  # [1/mol]
-            # T_low = low_pd["T"]
-            # E_H2 = lambda T: ac_H2 * (Cv(T)*T - Cv(T_low)*T_low)/N_A
-            # # calculate expected ratio
-            # # Energy per particle
-            # E_rec = 7.1511 * 10**-19 # Joules
-            # # https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.121.013001
-            # # equivalent to 4.4634 eV
-            # # Technically thermal and recombination should probably have its 
-            # # own accomodation coefficient TODO
-            # # Boltzman constant kb in [J/K]
-            # kb = 1.38064852 * 10**-23 
-            # # Effective energyper H assuming for every 2 H an H2 of equal T 
-            # # would also have hit the wire
-            # # using ac_H = beta_H the"reaction energy accomodation coefficient"
-            # #  as per 
-            # # Formally ac_H (alpha_H), beta_H and gamma_H are all separate
-            # #  parameters
-            # #https://pubs.acs.org/doi/epdf/10.1021/j100801a014
-            # beta_H = ac_H
-            # E_H = lambda T : (gamma_H * ac_H * (E_rec / 2) 
-            #                 + ac_H * (3/2 *kb * (T-low_pd["T"]))
-            #                 - E_H2(T)/2
-            #                          ) 
-            # # E_rec + differenc ein thermal energy from H2 and H at same T
+            # Calculate energy delivered per H2
+            # ac_H2 estimated from my own measurements
+            # TODO do clean calculation for future use
+            ac_H2 = 0.45
+            #literature ac_H2 is 0.38 in one paper (at one temp)
+            N_A = 6.02214076e23  # [1/mol]
+            T_low = low_pd["T"]
+            E_H2 = lambda T: ac_H2 * (Cv(T)*T - Cv(T_low)*T_low)/N_A
+            # calculate expected ratio
+            # Energy per particle
+            E_rec = 7.1511 * 10**-19 # Joules
+            # https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.121.013001
+            # equivalent to 4.4634 eV
+            # Technically thermal and recombination should probably have its 
+            # own accomodation coefficient TODO
+            # Boltzman constant kb in [J/K]
+            kb = 1.38064852 * 10**-23 
+            # Effective energyper H assuming for every 2 H an H2 of equal T 
+            # would also have hit the wire
+            # using ac_H = beta_H the"reaction energy accomodation coefficient"
+            #  as per 
+            # Formally ac_H (alpha_H), beta_H and gamma_H are all separate
+            #  parameters
+            #https://pubs.acs.org/doi/epdf/10.1021/j100801a014
+            beta_H = ac_H
+            E_H = lambda T : (gamma_H * ac_H * (E_rec / 2) 
+                            + ac_H * (3/2 *kb * (T-low_pd["T"]))
+                            - E_H2(T)/2
+                                     ) 
+            # E_rec + differenc ein thermal energy from H2 and H at same T
 
-            # # print(low_pd["T"], high_pd["T"])
-            # n_H = p_excess/E_H(high_pd["T"])
-            # n_H_err = p_excess_err/E_H(high_pd["T"])
-            # # Assumes mid T can be scaled to high T
-            # n_H2 = p_H2(mid_pd["T"])/E_H2(mid_pd["T"])
-            # n_H2_err = p_H2_err(mid_pd["T"])/E_H2(mid_pd["T"])
-            # # number of H divided by number of total H
-            # ceb = (n_H) / ((n_H) + 2 * n_H2)
-            # ceb_lst.append(ceb)
-            # ceb_err = np.sqrt(
-            #             (n_H_err * (2 * n_H2)/(((n_H) + 2 * n_H2))**2)**2
-            #             + (n_H2_err * (2 * n_H)/(((n_H) + 2 * n_H2))**2)**2
-            #             )
-            # ceb_err_lst.append(ceb_err[0])
+            # print(low_pd["T"], high_pd["T"])
+            n_H = p_excess/E_H(high_pd["T"])
+            n_H_err = p_excess_err/E_H(high_pd["T"])
+            # Assumes mid T can be scaled to high T
+            n_H2 = p_H2(mid_pd["T"])/E_H2(mid_pd["T"])
+            n_H2_err = p_H2_err(mid_pd["T"])/E_H2(mid_pd["T"])
+            # number of H divided by number of total H
+            ceb = (n_H) / ((n_H) + 2 * n_H2)
+            ceb_lst.append(ceb)
+            ceb_err = np.sqrt(
+                        (n_H_err * (2 * n_H2)/(((n_H) + 2 * n_H2))**2)**2
+                        + (n_H2_err * (2 * n_H)/(((n_H) + 2 * n_H2))**2)**2
+                        )
+            ceb_err_lst.append(ceb_err[0])
 
     # print(z_lst, p_excess_lst)
 
@@ -282,40 +252,33 @@ def background_subtract_p(low_pd, high_pd):
             p_excess_err_lst.append(p_excess_err)
     return z_lst, p_excess_lst,p_excess_err_lst
 
-H2_indicators = [
-                             "390TC",  
-                            "0A"
-                            ] 
-(z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst
-    ) = multi_interp_point_CEB(
-    pd_dict, H2_indicators = H2_indicators)
-
-# z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst = three_point_CEB(
-#     pd_dict["0A"],pd_dict["390TC"],pd_dict["720TC"])
-# (z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst
-#  ) = three_point_CEB(
-#     pd_dict["0A"],pd_dict["390TC"],pd_dict["720TC"],ac_H=0.65, gamma_H=0.03)
-# #ac_H lit from https://doi.org/10.1039/TF9716702711
+z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst = three_point_CEB(
+    pd_dict["0A"],pd_dict["390TC"],pd_dict["715TC"])
+z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst = three_point_CEB(
+    pd_dict["0A"],pd_dict["390TC"],pd_dict["715TC"],ac_H=0.65, gamma_H=0.03)
+#ac_H lit from https://doi.org/10.1039/TF9716702711
 # Need to do some work with  this source verifiying it means what I think TODO
 # also referencing https://pubs.acs.org/doi/epdf/10.1021/j100801a014
 # y',the recombination coefficient defined as the fraction of incident 
 # atoms which recombine,
 
-# plot p_excess_lst
+# plot ceb_lst
 # Start plot:
-plotname = "excess_power_basic"
+plotname = "CEB_plot"
 fig = plt.figure(0, figsize=(8,6.5), dpi =300)
 ax1=plt.gca()
 x_label = r"$z_{pos}$ [mm]"
-ax1.errorbar(z_lst, p_excess_lst,yerr = p_excess_err_lst, fmt = ".",
-                #label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K")
+# ax1.errorbar(pd["z_arr"], pd["p_arr"],yerr = pd["p_err_arr"], fmt = ".",
+#                 label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K"))
+ax1.scatter(z_lst, ceb_lst, #fmt = ".",
+                label = "ac_H = 1" + r",$\gamma = 1$"
                 )
-# ax1.scatter(z_lst, p_excess_lst, #fmt = ".",
-#                 #label = "excess power"
-#                 )
+ax1.scatter(z_lst, ceb_lst_ac_H_lit, #fmt = ".",
+                label = "ac_H = 0.65" + r",$\gamma = 0.03$"
+                )
 
 
-ax1.set_ylabel(r"excess power [µW]")
+ax1.set_ylabel(r"dissociation Efficiency (estimate)")
 ax1.set_xlabel(x_label)
 
 ax1.grid(True)
@@ -334,13 +297,64 @@ plt.savefig(out_dir + plotname
 ax1.cla()
 fig.clf()
 plt.close()
-###################### Previous is reuse of old code to get p_excess
 
-# Plot all the 1sccm runs in one plot
-# Need to add run dicts for 0A and 720TC
-# Use 0A: 2023-12-22_1sccm_0A_z-scan_jf+hg_wire
-# 720TC: 2023-04-21_1sccm_15A_TC_z-scan_jf_wire
 
+# plot ceb_lst
+# Start plot:
+plotname = "CEB_plot_spread"
+fig = plt.figure(0, figsize=(8,6.5), dpi =300)
+ax1=plt.gca()
+x_label = r"$z_{pos}$ [mm]"
+# ax1.errorbar(pd["z_arr"], pd["p_arr"],yerr = pd["p_err_arr"], fmt = ".",
+#                 label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K"))
+ax1.scatter(z_lst, ceb_lst, #fmt = ".",
+                label = "ac_H = 1" + r",$\gamma = 1$"
+                )
+ax1.scatter(z_lst, ceb_lst_ac_H_lit, #fmt = ".",
+                label = "ac_H = 0.65" + r",$\gamma = 0.03$"
+                )
+# maximize CEB: 0.65+-0.2, 0.03+-0.01
+ac_H = 0.45
+gamma_H = 0.01
+(z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst
+ ) = three_point_CEB(
+    pd_dict["0A"],pd_dict["390TC"],pd_dict["715TC"],
+    ac_H=ac_H, gamma_H=gamma_H)
+ax1.scatter(z_lst, ceb_lst_ac_H_lit, #fmt = ".",
+                label = (f"ac_H = {ac_H:.2f}" + r",$\gamma =$" 
+                         + f"{gamma_H:.2f}")
+                )
+# minimize CEB: 0.65+-0.2, 0.03+-0.01
+ac_H = 0.85
+gamma_H = 0.05
+(z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst
+ ) = three_point_CEB(
+    pd_dict["0A"],pd_dict["390TC"],pd_dict["715TC"],ac_H=ac_H, gamma_H=gamma_H)
+ax1.scatter(z_lst, ceb_lst_ac_H_lit, #fmt = ".",
+                label = (f"ac_H = {ac_H:.2f}" + r",$\gamma =$" 
+                         + f"{gamma_H:.2f}")
+                )
+
+
+ax1.set_ylabel(r"dissociation Efficiency (estimate)")
+ax1.set_xlabel(x_label)
+
+ax1.grid(True)
+ax1.legend(shadow=True, fontsize = 13)
+# ax1.tight_layout()
+
+
+fig.tight_layout()
+
+format_im = 'png' #'pdf' or png
+dpi = 300
+plt.savefig(out_dir + plotname
+            + '.{}'.format(format_im),
+            format=format_im, dpi=dpi)
+# plt.show()
+ax1.cla()
+fig.clf()
+plt.close()
 # ####################################
 # filename = "1sccm_720TC_excess_power.json"
 # beamfit = wa.Beamfit(
@@ -370,7 +384,7 @@ plt.close()
 #                         )
 # ########################################
 ####################################
-filename = "10sccm_720TC.json"
+filename = "02sccm_715TC_penumbra.json"
 beamfit = wa.Beamfit(
     run_dict_path = work_dir + filename)
 # HACK to change out dir without editing the files
@@ -391,19 +405,23 @@ print("custom penumbra fit wait ~??min")
 beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
                          p_arr=np.array(p_excess_lst).flatten()
                         , p_err_arr = np.array(p_excess_err_lst).flatten()
-                ,plotname="custom_fit_plot"+ "_"+ "-".join(H2_indicators)
-                )
-
-# print("default fit wait ~1min")
-# beamfit.default_fit()
-# beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
-#                            + "default_fit_"+  filename)
-# print("custom fit wait ~1min")
-# beamfit.custom_data_fit(z_arr=np.asarray(z_lst).flatten(),
-#                          p_arr=np.array(p_excess_lst).flatten()
-#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
-#                         )
-########################################
+                        )
+print("default fit wait ~1min")
+filename = "02sccm_715TC.json"
+beamfit = wa.Beamfit(
+    run_dict_path = work_dir + filename)
+beamfit.default_fit()
+beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
+                           + "default_fit_"+  filename)
+print("custom fit wait ~1min")
+filename = "02sccm_715TC.json"
+beamfit = wa.Beamfit(
+    run_dict_path = work_dir + filename)
+beamfit.custom_data_fit(z_arr=np.asarray(z_lst).flatten(),
+                         p_arr=np.array(p_excess_lst).flatten()
+                        , p_err_arr = np.array(p_excess_err_lst).flatten()
+                        )
+#######################################
 
 # ################################
 # # Do background  subtracted fit for 1250K

@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.optimize import curve_fit
-from scipy.interpolate import interp1d
 
 import wire_analysis as wa
 from wire_analysis.utils import load_json_dict, load_extractor_dict_json
@@ -28,7 +27,10 @@ mpl.rc('font', **font)
 work_dir = "./run_dicts/"
 out_dir = "./output/"
 
-# 10 sccm version, with required interpolation (WIP)
+# Plot all the 1sccm runs in one plot
+# Need to add run dicts for 0A and 720TC
+# Use 0A: 2023-12-22_1sccm_0A_z-scan_jf+hg_wire
+# 720TC: 2023-04-21_1sccm_15A_TC_z-scan_jf_wire
 
 
 for filename in os.listdir(work_dir):
@@ -76,11 +78,11 @@ def p_data_plot_dict(filename):
 # plot data into shared plot   
 #######
 # TC_lst = [200, 300, 390, 475]
-indicator_list = ["720TC", "390TC",  "0A"]
-filename_list = ["10sccm_" + indicator + ".json" 
+indicator_list = ["720TC", "475TC", "390TC", "300TC","200TC",  "0A"]
+filename_list = ["1sccm_" + indicator + ".json" 
                  for indicator in indicator_list]
 # for TC_lst 44 is a HACK for 0 A ("room temp" =  44 = 297.7K)
-TC_lst = [720, 390,  44] 
+TC_lst = [720, 475, 390, 300, 200, 44] 
 T_lst = [TC_to_T_Hack(TC) for TC in TC_lst]
 pd_dict = {}
 # Start plot:
@@ -121,8 +123,8 @@ plt.close()
 
 ######
 # print(pd_dict)
-def multi_interp_point_CEB(pd_dict,
-                    H2_indicators = [ "390TC", "0A"],
+def multi_point_CEB(pd_dict,
+                    H2_indicators = ["475TC", "390TC", "300TC","200TC",  "0A"],
                     H_indicators = ["720TC"],
                     ac_H = 1, gamma_H = 1):
     # align data on z-axis (of most sparese data set)
@@ -135,29 +137,14 @@ def multi_interp_point_CEB(pd_dict,
     #Ts H2
     Ts = [pd_dict[key]["T"] for key in H2_indicators]
 
-    #interpolate the low T runs
-    for key in H2_indicators:
-        pd_dict[key]["interp"] = interp1d(
-            x=pd_dict[key]["z_arr"],y = pd_dict[key]["p_arr"])
-        pd_dict[key]["interp_err"] = interp1d(
-            x=pd_dict[key]["z_arr"],y = pd_dict[key]["p_err_arr"])
-    # z_list, result_dict = sort_by_z_list(z_list_unsorted, result_dict)
-    # print("sorted_results:", {"z_list": np.array(z_list)}, result_dict)
-
-    # Define range
-    domain = (max([min(pd_dict[key]["z_arr"]) for key in H2_indicators]),
-              min([max(pd_dict[key]["z_arr"]) for key in H2_indicators])
-              )
-
     for i,z in enumerate(high_pd["z_arr"]):
-        if domain[0] <= z <= domain[1]:
-        # # checksum = 0
-        # # for key in H2_indicators:
-        # #     if z in pd_dict[key]["z_arr"]:
-        # #         checksum += 1
-        # if checksum == len(H2_indicators):
-        #     i_dict = {key:np.where(pd_dict[key]["z_arr"] == z) 
-        #               for key in H2_indicators}
+        checksum = 0
+        for key in H2_indicators:
+            if z in pd_dict[key]["z_arr"]:
+                checksum += 1
+        if checksum == len(H2_indicators):
+            i_dict = {key:np.where(pd_dict[key]["z_arr"] == z) 
+                      for key in H2_indicators}
             # i_low = np.where(low_pd["z_arr"] == z)
             # i_mid = np.where(mid_pd["z_arr"] == z)
             z_lst.append(z)
@@ -168,9 +155,9 @@ def multi_interp_point_CEB(pd_dict,
             # multi point line fit
 
             xs = Ts
-            ps = np.array([pd_dict[key]["interp"](z)
+            ps = np.array([pd_dict[key]["p_arr"][i_dict[key]] 
                     for key in H2_indicators]).flatten()
-            ps_err = np.array([pd_dict[key]["interp_err"](z)
+            ps_err = np.array([pd_dict[key]["p_err_arr"][i_dict[key]] 
                     for key in H2_indicators]).flatten()
             ys = ps
             # print("Ts", Ts, np.shape(Ts))
@@ -282,12 +269,13 @@ def background_subtract_p(low_pd, high_pd):
             p_excess_err_lst.append(p_excess_err)
     return z_lst, p_excess_lst,p_excess_err_lst
 
-H2_indicators = [
-                             "390TC",  
+H2_indicators = ["475TC", 
+                             "390TC", 
+                             "300TC",
+                              "200TC",  
                             "0A"
                             ] 
-(z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst
-    ) = multi_interp_point_CEB(
+z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst = multi_point_CEB(
     pd_dict, H2_indicators = H2_indicators)
 
 # z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst = three_point_CEB(
@@ -370,7 +358,7 @@ plt.close()
 #                         )
 # ########################################
 ####################################
-filename = "10sccm_720TC.json"
+filename = "1sccm_720TC_penumbra.json"
 beamfit = wa.Beamfit(
     run_dict_path = work_dir + filename)
 # HACK to change out dir without editing the files

@@ -4,10 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.optimize import curve_fit
-from scipy.interpolate import interp1d
+from itertools import chain, combinations
+from tqdm import tqdm
 
 import wire_analysis as wa
-from wire_analysis.utils import load_json_dict, load_extractor_dict_json
+from wire_analysis.utils import (load_json_dict,save_json_dict,
+                                  load_extractor_dict_json)
 from wire_analysis.accommodation_coefficient import (
     calc_accomodation_coefficient, TC_to_T_Hack, Cv)
 from wire_analysis.flow_on_off_cycle_analysis import (
@@ -28,7 +30,10 @@ mpl.rc('font', **font)
 work_dir = "./run_dicts/"
 out_dir = "./output/"
 
-# 10 sccm version, with required interpolation (WIP)
+# Plot all the 1sccm runs in one plot
+# Need to add run dicts for 0A and 720TC
+# Use 0A: 2023-12-22_1sccm_0A_z-scan_jf+hg_wire
+# 720TC: 2023-04-21_1sccm_15A_TC_z-scan_jf_wire
 
 
 for filename in os.listdir(work_dir):
@@ -76,11 +81,11 @@ def p_data_plot_dict(filename):
 # plot data into shared plot   
 #######
 # TC_lst = [200, 300, 390, 475]
-indicator_list = ["720TC", "390TC",  "0A"]
-filename_list = ["10sccm_" + indicator + ".json" 
+indicator_list = ["720TC", "475TC", "390TC", "300TC","200TC",  "0A"]
+filename_list = ["1sccm_" + indicator + ".json" 
                  for indicator in indicator_list]
 # for TC_lst 44 is a HACK for 0 A ("room temp" =  44 = 297.7K)
-TC_lst = [720, 390,  44] 
+TC_lst = [720, 475, 390, 300, 200, 44] 
 T_lst = [TC_to_T_Hack(TC) for TC in TC_lst]
 pd_dict = {}
 # Start plot:
@@ -95,8 +100,11 @@ for i,filename in enumerate(filename_list):
     pd_dict[indicator_list[i]]["index"] = i
     pd_dict[indicator_list[i]]["T"] = T_lst[i]
     ### ax1
+    # ax1.errorbar(pd["z_arr"], pd["p_arr"],yerr = pd["p_err_arr"], fmt = ".",
+    #             label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K"))
     ax1.errorbar(pd["z_arr"], pd["p_arr"],yerr = pd["p_err_arr"], fmt = ".",
-                label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K"))
+        label = (r"$P_{\rm{meas}}(\rm{T}$ $\approx$ "+f"{T_lst[i]:.0f}K)"), 
+        markersize =10)
 
 
 ax1.set_ylabel(r"power [µW]")
@@ -121,8 +129,8 @@ plt.close()
 
 ######
 # print(pd_dict)
-def multi_interp_point_CEB(pd_dict,
-                    H2_indicators = [ "390TC", "0A"],
+def multi_point_CEB(pd_dict,
+                    H2_indicators = ["475TC", "390TC", "300TC","200TC",  "0A"],
                     H_indicators = ["720TC"],
                     ac_H = 1, gamma_H = 1):
     # align data on z-axis (of most sparese data set)
@@ -135,29 +143,14 @@ def multi_interp_point_CEB(pd_dict,
     #Ts H2
     Ts = [pd_dict[key]["T"] for key in H2_indicators]
 
-    #interpolate the low T runs
-    for key in H2_indicators:
-        pd_dict[key]["interp"] = interp1d(
-            x=pd_dict[key]["z_arr"],y = pd_dict[key]["p_arr"])
-        pd_dict[key]["interp_err"] = interp1d(
-            x=pd_dict[key]["z_arr"],y = pd_dict[key]["p_err_arr"])
-    # z_list, result_dict = sort_by_z_list(z_list_unsorted, result_dict)
-    # print("sorted_results:", {"z_list": np.array(z_list)}, result_dict)
-
-    # Define range
-    domain = (max([min(pd_dict[key]["z_arr"]) for key in H2_indicators]),
-              min([max(pd_dict[key]["z_arr"]) for key in H2_indicators])
-              )
-
     for i,z in enumerate(high_pd["z_arr"]):
-        if domain[0] <= z <= domain[1]:
-        # # checksum = 0
-        # # for key in H2_indicators:
-        # #     if z in pd_dict[key]["z_arr"]:
-        # #         checksum += 1
-        # if checksum == len(H2_indicators):
-        #     i_dict = {key:np.where(pd_dict[key]["z_arr"] == z) 
-        #               for key in H2_indicators}
+        checksum = 0
+        for key in H2_indicators:
+            if z in pd_dict[key]["z_arr"]:
+                checksum += 1
+        if checksum == len(H2_indicators):
+            i_dict = {key:np.where(pd_dict[key]["z_arr"] == z) 
+                      for key in H2_indicators}
             # i_low = np.where(low_pd["z_arr"] == z)
             # i_mid = np.where(mid_pd["z_arr"] == z)
             z_lst.append(z)
@@ -168,9 +161,9 @@ def multi_interp_point_CEB(pd_dict,
             # multi point line fit
 
             xs = Ts
-            ps = np.array([pd_dict[key]["interp"](z)
+            ps = np.array([pd_dict[key]["p_arr"][i_dict[key]] 
                     for key in H2_indicators]).flatten()
-            ps_err = np.array([pd_dict[key]["interp_err"](z)
+            ps_err = np.array([pd_dict[key]["p_err_arr"][i_dict[key]] 
                     for key in H2_indicators]).flatten()
             ys = ps
             # print("Ts", Ts, np.shape(Ts))
@@ -187,6 +180,8 @@ def multi_interp_point_CEB(pd_dict,
 
             a_err = np.sqrt(pcov[0,0])
             b_err = np.sqrt(pcov[1,1])
+            # print("a, aerr", (popt[0],a_err))
+            # print("b, berr", (popt[1],b_err))
 
             p_fit_err =  lambda T : np.sqrt((a_err *Cv(T) * T)**2 + b_err**2)
 
@@ -282,177 +277,209 @@ def background_subtract_p(low_pd, high_pd):
             p_excess_err_lst.append(p_excess_err)
     return z_lst, p_excess_lst,p_excess_err_lst
 
-H2_indicators = [
-                             "390TC",  
+H2_indicators = ["475TC", 
+                             "390TC", 
+                             "300TC",
+                              "200TC",  
                             "0A"
                             ] 
-(z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst
-    ) = multi_interp_point_CEB(
-    pd_dict, H2_indicators = H2_indicators)
 
-# z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst = three_point_CEB(
-#     pd_dict["0A"],pd_dict["390TC"],pd_dict["720TC"])
-# (z_lst, ceb_lst_ac_H_lit,ceb_err_lst_ac_H_lit, p_excess_lst,p_excess_err_lst
-#  ) = three_point_CEB(
-#     pd_dict["0A"],pd_dict["390TC"],pd_dict["720TC"],ac_H=0.65, gamma_H=0.03)
-# #ac_H lit from https://doi.org/10.1039/TF9716702711
-# Need to do some work with  this source verifiying it means what I think TODO
-# also referencing https://pubs.acs.org/doi/epdf/10.1021/j100801a014
-# y',the recombination coefficient defined as the fraction of incident 
-# atoms which recombine,
+#"Subsequences of the iterable from shortest to longest. with minimum length 2"
+s = H2_indicators
+indicator_powerset = chain.from_iterable(combinations(s, r) 
+                    for r in range(2, len(s)+1))
+set_indicator_powerset = set(indicator_powerset)
 
-# plot p_excess_lst
-# Start plot:
-plotname = "excess_power_basic"
+
+# #### START Comment  out here
+# indicator_powerset = chain.from_iterable(combinations(s, r) 
+#                     for r in range(2, len(s)+1))
+# fit_res_dict = {}
+# for i, indicators in tqdm(enumerate(indicator_powerset)):
+#     print(indicators)
+#     z_lst, ceb_lst, ceb_err_lst, p_excess_lst,p_excess_err_lst = multi_point_CEB(
+#         pd_dict, H2_indicators = indicators)
+#     ###################### Previous is reuse of old code to get p_excess
+
+#     ####################################
+#     # Broken filename = "1sccm_720TC_penumbra_"+ "-".join(indicators) + ".json"
+#     filename = "1sccm_720TC_penumbra.json"
+#     beamfit = wa.Beamfit(
+#         run_dict_path = work_dir + filename)
+#     # HACK to change out dir without editing the files
+#     # TODO If you do this implement feature to retroactively change out_dir in
+#     # run_dict
+#     ############### TODO Implement as base function
+#     name, file_extension = os.path.splitext(filename)
+#     beamfit.run_dict["out_dir_base"] = os.path.abspath("./output/") + os.sep 
+#     beamfit.out_dir = beamfit.run_dict["out_dir_base"] + name + os.sep
+#     os.makedirs(beamfit.out_dir, exist_ok=True)
+#     beamfit.save_json_run_dict()
+#     ############### END TODO
+
+#     # print("p_excess_lst", p_excess_lst)
+#     # print("p_arr=np.array(p_excess_lst)", np.array(p_excess_lst).flatten())
+
+#     print("custom penumbra fit wait ~??min")
+#     (popt, pcov) = beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
+#                             p_arr=np.array(p_excess_lst).flatten()
+#                             , p_err_arr = np.array(p_excess_err_lst).flatten()
+#                     ,plotname="custom_fit_plot"+ "_"+ "-".join(indicators)
+#                     )
+#     fit_res_dict[str(indicators)] = {}
+#     fit_res_dict[str(indicators)]["popt"] = popt.tolist()
+#     fit_res_dict[str(indicators)]["pcov"] = pcov.tolist()
+
+
+# save_json_dict("all_fit_params.json", fit_res_dict)
+# #### END Comment  out here
+
+indicator_powerset = set_indicator_powerset
+#Just load:
+fit_res_dict = load_json_dict("all_fit_params.json")
+# print(fit_res_dict)
+# print(fit_res_dict["('475TC', '390TC')"]["pcov"][0][0])
+# print([str(key) for key in indicator_powerset] )
+l_eff_list = [fit_res_dict[str(key)]["popt"][0] for key in indicator_powerset]
+print([fit_res_dict[str(key)]["pcov"] for key in indicator_powerset])
+l_eff_errs = [np.sqrt(fit_res_dict[str(key)]["pcov"][0][0])
+               for key in indicator_powerset]
+# print("l_eff_list:", l_eff_list)
+print("l_eff:", f"{np.mean(l_eff_list):.3f}", " +- "
+      , f"{np.std(l_eff_list):.3f}" )
+
+# print("l_eff_errs", l_eff_errs)
+values = np.array(l_eff_list)
+errors = np.array(l_eff_errs)
+n = len(values)
+weights = 1/ (errors**2)
+# Unweighted
+mean = np.sum(values) / n
+std = np.sqrt(np.sum((values - mean)**2)/(n-1))
+#Weighted
+w_mean = np.sum(weights * values) / np.sum(weights)
+# weighted standat deviation
+w_std = np.sqrt(np.sum(weights * (values - w_mean)**2)
+                / (((n-1)/n) * np.sum(weights)  )
+)
+# the std of mean will liekly be a gross underestimate because it will
+# assume fit errors to be  genuine and independent
+std_of_mean = np.sqrt(1/(np.sum(weights)))
+print("mean= ", mean)
+print("std= ", std )
+print("w_mean = ", w_mean)
+print("w_std = ", w_std)
+print("std_of_mean =", std_of_mean)
+
+print(sorted(l_eff_list)[0:-1])
+print("cut span mean= ", np.sum(sorted(l_eff_list)[0:-1]) / n)
+print(sorted(l_eff_list))
+
+
+# # With just length 2
+# indicator_powerset = chain.from_iterable(combinations(s, r) 
+#                     for r in range(2, 2+1))
+# set_indicator_powerset = set(indicator_powerset)
+# indicator_powerset = set_indicator_powerset
+
+# l_eff_list = [fit_res_dict[str(key)]["popt"][0] for key in indicator_powerset]
+# print([fit_res_dict[str(key)]["pcov"] for key in indicator_powerset])
+# l_eff_errs = [np.sqrt(fit_res_dict[str(key)]["pcov"][0][0])
+#                for key in indicator_powerset]
+# # print("l_eff_list:", l_eff_list)
+# print("l_eff:", f"{np.mean(l_eff_list):.3f}", " +- "
+#       , f"{np.std(l_eff_list):.3f}" )
+
+# # print("l_eff_errs", l_eff_errs)
+# values = np.array(l_eff_list)
+# errors = np.array(l_eff_errs)
+# n = len(values)
+# weights = 1/ (errors**2)
+# # Unweighted
+# mean = np.sum(values) / n
+# std = np.sqrt(np.sum((values - mean)**2)/(n-1))
+# #Weighted
+# w_mean = np.sum(weights * values) / np.sum(weights)
+# # weighted standat deviation
+# w_std = np.sqrt(np.sum(weights * (values - w_mean)**2)
+#                 / (((n-1)/n) * np.sum(weights)  )
+# )
+# # the std of mean will liekly be a gross underestimate because it will
+# # assume fit errors to be  genuine and independent
+# std_of_mean = np.sqrt(1/(np.sum(weights)))
+# print("mean= ", mean)
+# print("std= ", std )
+# print("w_mean = ", w_mean)
+# print("w_std = ", w_std)
+# print("std_of_mean =", std_of_mean)
+
+# print(sorted(l_eff_list))
+
+dat = values
+# nBins = 20 
+nBins = 12 
+title='Histogram'
+hist_range = []
+
 fig = plt.figure(0, figsize=(8,6.5), dpi =300)
-ax1=plt.gca()
-x_label = r"$z_{pos}$ [mm]"
-ax1.errorbar(z_lst, p_excess_lst,yerr = p_excess_err_lst, fmt = ".",
-                #label = (f"{indicator_list[i]} ~ {T_lst[i]:.1f}K")
-                )
-# ax1.scatter(z_lst, p_excess_lst, #fmt = ".",
-#                 #label = "excess power"
-#                 )
+if hist_range == []:
+    hist_range = np.array([np.min(dat), np.max(dat)])
+bin_width =  (hist_range[0]-hist_range[-1])/nBins
+#nBins=round(abs(hist_range[-1]-hist_range[0])/bin_width)+1
 
+binList=np.linspace(hist_range[0],
+                    hist_range[-1],num=nBins + 1)
 
-ax1.set_ylabel(r"excess power [µW]")
-ax1.set_xlabel(x_label)
+#print(binList)
+entries,bin_edges=np.histogram(dat,bins=binList,range=hist_range)
 
-ax1.grid(True)
-ax1.legend(shadow=True, fontsize = 13)
-# ax1.tight_layout()
+bin_centers = (bin_edges[:-1]+bin_edges[1:]) / 2
+#bin_width=(abs(bin_edges[-1]-bin_edges[0]))/(nBins)
 
+a=np.empty([1,3])
+for i in range(0,nBins):
+    a=np.append(a,[[i,bin_centers[i],entries[i]]],axis=0)
+    
 
-fig.tight_layout()
+l_eff = fit_res_dict["('475TC', '390TC', '300TC', '200TC', '0A')"]["popt"][0]
+err = np.sqrt(
+    fit_res_dict["('475TC', '390TC', '300TC', '200TC', '0A')"]["pcov"][0][0])
+plt.axvline(l_eff, 
+        #     label=r"All Sets " + r"$l_{\rm eff} = $"
+        # + f"{l_eff:.2f}", 
+        color = "C0", alpha = 1, ls = "--", lw  = 3)   
+
+plt.axvspan(l_eff - err, l_eff + err, label=r"All Sets, " + r"$l_{\rm eff} = $"
+        + f"{l_eff:.2f}" + r"$\pm$" + f"{err:.2f}", 
+        color = "C0", alpha = 0.5, ls = "--")   
+
+# l_eff = fit_res_dict["('390TC', '0A')"]["popt"][0]
+# err = np.sqrt(
+#     fit_res_dict["('390TC', '0A')"]["pcov"][0][0])
+l_eff = 4.20
+err = 0.22
+
+plt.axvline(l_eff, 
+        #     label=r"720TC-390TC-0A " + r"$l_{\rm eff} = $"
+        # + f"{l_eff:.2f}", 
+        color = "C2", alpha = 1, ls = "--", lw = 3)    
+plt.axvspan(l_eff - err, l_eff + err, 
+            label=r"2211K-1277K-298K,  " + r"$l_{\rm eff} = $"
+        + f"{l_eff:.2f}" + r"$\pm$" + f"{err:.2f}", 
+        color = "C2", alpha = 0.5, ls = "--")
+
+#plt.title(title)
+plt.ylabel('Count')
+plt.xlabel(r'$l_{\rm eff}$')
+plt.bar(bin_centers, entries, align='center',width=bin_width,edgecolor='k',
+        color = "C1", label  = "Binned Data")
+plt.legend(fontsize = 13, shadow = True)
+plt.tight_layout()
 
 format_im = 'png' #'pdf' or png
 dpi = 300
-plt.savefig(out_dir + plotname
-            + '.{}'.format(format_im),
-            format=format_im, dpi=dpi)
-# plt.show()
-ax1.cla()
-fig.clf()
+plt.savefig(out_dir + title
+        + '.{}'.format(format_im),
+        format=format_im, dpi=dpi)
 plt.close()
-###################### Previous is reuse of old code to get p_excess
-
-# Plot all the 1sccm runs in one plot
-# Need to add run dicts for 0A and 720TC
-# Use 0A: 2023-12-22_1sccm_0A_z-scan_jf+hg_wire
-# 720TC: 2023-04-21_1sccm_15A_TC_z-scan_jf_wire
-
-# ####################################
-# filename = "1sccm_720TC_excess_power.json"
-# beamfit = wa.Beamfit(
-#     run_dict_path = work_dir + filename)
-# # HACK to change out dir without editing the files
-# # TODO If you do this implement feature to retroactively change out_dir in
-# # run_dict
-# ############### TODO Implement as base function
-# name, file_extension = os.path.splitext(filename)
-# beamfit.run_dict["out_dir_base"] = os.path.abspath("./output/") + os.sep 
-# beamfit.out_dir = beamfit.run_dict["out_dir_base"] + name + os.sep
-# os.makedirs(beamfit.out_dir, exist_ok=True)
-# beamfit.save_json_run_dict()
-# ############### END TODO
-
-# print("p_excess_lst", p_excess_lst)
-# print("p_arr=np.array(p_excess_lst)", np.array(p_excess_lst).flatten())
-
-# print("default fit wait ~1min")
-# beamfit.default_fit()
-# beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
-#                            + "default_fit_"+  filename)
-# print("custom fit wait ~1min")
-# beamfit.custom_data_fit(z_arr=np.asarray(z_lst).flatten(),
-#                          p_arr=np.array(p_excess_lst).flatten()
-#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
-#                         )
-# ########################################
-####################################
-filename = "10sccm_720TC.json"
-beamfit = wa.Beamfit(
-    run_dict_path = work_dir + filename)
-# HACK to change out dir without editing the files
-# TODO If you do this implement feature to retroactively change out_dir in
-# run_dict
-############### TODO Implement as base function
-name, file_extension = os.path.splitext(filename)
-beamfit.run_dict["out_dir_base"] = os.path.abspath("./output/") + os.sep 
-beamfit.out_dir = beamfit.run_dict["out_dir_base"] + name + os.sep
-os.makedirs(beamfit.out_dir, exist_ok=True)
-beamfit.save_json_run_dict()
-############### END TODO
-
-# print("p_excess_lst", p_excess_lst)
-# print("p_arr=np.array(p_excess_lst)", np.array(p_excess_lst).flatten())
-
-print("custom penumbra fit wait ~??min")
-beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
-                         p_arr=np.array(p_excess_lst).flatten()
-                        , p_err_arr = np.array(p_excess_err_lst).flatten()
-                ,plotname="custom_fit_plot"+ "_"+ "-".join(H2_indicators)
-                )
-
-# print("default fit wait ~1min")
-# beamfit.default_fit()
-# beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
-#                            + "default_fit_"+  filename)
-# print("custom fit wait ~1min")
-# beamfit.custom_data_fit(z_arr=np.asarray(z_lst).flatten(),
-#                          p_arr=np.array(p_excess_lst).flatten()
-#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
-#                         )
-########################################
-
-# ################################
-# # Do background  subtracted fit for 1250K
-# # Calculate different excess lists
-# z_lst, p_excess_lst,p_excess_err_lst = background_subtract_p(
-#     pd_dict["0A"],pd_dict["390TC"])
-
-# #fit and plot
-# filename = "1sccm_390TC_penumbra.json"
-# beamfit = wa.Beamfit(
-#     run_dict_path = work_dir + filename)
-# # HACK to change out dir without editing the files
-# # TODO If you do this implement feature to retroactively change out_dir in
-# # run_dict
-# ############### TODO Implement as base function
-# name, file_extension = os.path.splitext(filename)
-# beamfit.run_dict["out_dir_base"] = os.path.abspath("./output/") + os.sep 
-# beamfit.out_dir = beamfit.run_dict["out_dir_base"] + name + os.sep
-# os.makedirs(beamfit.out_dir, exist_ok=True)
-# beamfit.save_json_run_dict()
-# ############### END TODO
-
-# print("p_excess_lst", p_excess_lst)
-# print("p_arr=np.array(p_excess_lst)", np.array(p_excess_lst).flatten())
-
-# # print("default fit wait ~1min")
-# # beamfit.default_fit()
-# # beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
-# #                            + "default_fit_"+  filename)
-# print("custom penumbra fit wait ~??min")
-# beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
-#                          p_arr=np.array(p_excess_lst).flatten()
-#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
-#                         )
-# beamfit.save_json_run_dict(dict_path = beamfit.out_dir 
-#                            + "penumbra_fit_"+  filename)
-
-# print("custom fit wait ~1min")
-# beamfit.custom_data_fit(z_arr=np.asarray(z_lst).flatten(),
-#                          p_arr=np.array(p_excess_lst).flatten()
-#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
-#                         )
-# ##############################
-
-
-
-
-
-
-
-
-
+# return bin_centers, entries, bin_width
