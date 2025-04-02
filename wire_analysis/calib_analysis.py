@@ -16,7 +16,7 @@ from scipy.optimize import curve_fit
 from decimal import Decimal
 
 # import functions from other file
-import Voltage_base_analysis as vba
+from . import Voltage_base_analysis as vba
 
 #plot Options
 import matplotlib as mpl
@@ -367,7 +367,7 @@ def raw_dict_to_avg(data_dict,  key_list = "all",
 
 
 
-def plot_R_vs_P(avg_dict, plotname):
+def plot_R_vs_P(avg_dict, plotname, plot_dir = plot_dir):
     ############## Resistance vs power plot
     fig = plt.figure(0, figsize=(8,6.5))
     ax1=plt.gca()
