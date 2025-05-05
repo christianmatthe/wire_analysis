@@ -25,6 +25,10 @@ font = {#'family' : 'normal','weight' : 'bold',
         }
 mpl.rc('font', **font)
 mpl.rcParams['figure.dpi'] = 400
+#From Pascal
+mpl.rcParams['text.usetex'] = True
+mpl.rcParams['mathtext.fontset'] = 'cm'
+mpl.rcParams['font.family'] = 'cmu serif'
 
 
 # make a class for fitting l_eff Tschersich model to beam shape
@@ -803,15 +807,26 @@ class Beamfit():
             self.P_int_penumbra_dch(
                 z_space, l_eff, theta_max, z0, A, P_0, d_ch))
 
+        # HACK to include r_c as well
+        r_h_0 = 3.0
+        #r_c_0 = 0.5
+        # Guess that r_c_0 is actually a little smaller due to slight central
+        # concentration  of gas
+        r_c_0 = 0.4
+        # ##### All parameters except theta_max
+        P_int_fit = lambda z_space, l_eff, A , z0, P_0, d_ch: (
+            self.P_int_penumbra_3par(
+                z_space, l_eff, theta_max, z0, A, P_0, d_ch, r_h_0, r_c_0))
+
         # Use errors as absolute to get proper error estimation
         popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
                             sigma = P_err_arr,
                             absolute_sigma= False,
                             p0 = [l_eff, A,  z0, P_0, d_ch_0], 
                             bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1,
-                                     d_ch_0 - 1],
+                                     d_ch_0 - 1.5],
                                     [20,  A_bound[1],  z0 + 1, P_0 + 0.1,
-                                     d_ch_0 + 1])
+                                     d_ch_0 + 1.5])
                             )
         ######
 
@@ -828,6 +843,39 @@ class Beamfit():
         P_space_eye= P_int_fit(z_space, *popt_abs)
         P_arr_eye = P_int_fit(z_arr, *popt_abs)
 
+        # Option to add table of parameters
+        if True:
+            mpl.rc('text', usetex=True)
+            col_labels=["parameter",'fit value']
+            row_labels=[r'$l_{\rm eff}$',r'$A$',r'$z_0$', r"$P_0$", r"$d_{ch}$"]
+            table_vals=[[f"{popt_abs[i]:.2f}"+ r"$\pm$"
+                     + f"{np.sqrt(pcov_abs[i,i]):.2f}"] 
+                     for i in range(len(popt_abs))]
+            table = r'''\begin{tabular}{ c | c } '''
+            #add column headers
+            table = table + " & ".join(col_labels) + r" \\ \hline"
+            # Add rows:
+            for row in range(len(row_labels)):
+                table = table + row_labels[row] + " & "
+                table = table + " & ".join(table_vals[row])
+                #line break
+                table = table + r" \\ \hline"
+            #end table
+            table = table + r"\end{tabular}"
+            
+            print(table)
+
+            # plt.text(0,0,table,size=12,
+            # horizontalalignment='left',
+            # verticalalignment='bottom', transform=ax1.transAxes)
+
+            # # the rectangle is where I want to place the table
+            # the_table = plt.table(cellText=table_vals,
+            #         colWidths = [0.1]*len(col_labels),
+            #         rowLabels=row_labels,
+            #         colLabels=col_labels,
+            #         loc='center right')
+
         # Angle plot
         self.plot_fit(P_arr, P_arr_eye, P_err_arr, z_arr
             , z_space,P_space_eye, scale_residuals=True, 
@@ -835,7 +883,8 @@ class Beamfit():
             theta_max=theta_max/self.degree,
             l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
                      + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
-                     plotname = plotname)
+                     plotname = plotname,
+                     table_string = table)
         return (popt_abs, pcov_abs)
     
     def fit_3par_penumbra(self,z_arr, p_arr, p_err_arr, 
@@ -932,6 +981,7 @@ class Beamfit():
              P_space_compare = None, P_compare_label = "P_compare",
             # Name plot
             plotname = "default",
+            table_string = None,
              ):
         nParams = 5
         dof = len(P_arr) - nParams
@@ -1055,8 +1105,17 @@ class Beamfit():
         # Delete xticks on 1st axis
         ax1.set_xticklabels([])
 
+        # Optional table
+        if table_string == None:
+            pass
+        else:
+            plt.text(0.02,0.02,table_string,size=12,
+            horizontalalignment='left',
+            verticalalignment='bottom', transform=ax1.transAxes,
+            backgroundcolor = "w")
 
-        fig.tight_layout()
+
+        # fig.tight_layout()
         fig.subplots_adjust(left=0.2)
 
         format_im = 'png' #'pdf' or png
@@ -1075,7 +1134,7 @@ class Beamfit():
             shadow=True, fontsize = 13)
         plt.savefig(self.out_dir + plotname
             + '_chi2.{}'.format(format_im),
-            format=format_im, dpi=dpi)
+            format=format_im, dpi=dpi, bbox_inches="tight")
 
         ax1.cla()
         fig.clf()

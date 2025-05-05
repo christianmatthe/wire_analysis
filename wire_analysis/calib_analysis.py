@@ -30,6 +30,40 @@ plot_dir = os.path.dirname(os.path.abspath(__file__)) + os.sep + "output/"
 data_dir = os.path.dirname(os.path.abspath(__file__)) + os.sep + "data/"
 #######################
 
+def pt1000_T_to_R(T):
+    #in Celcius
+    #where
+
+    # R = resistance of sensor in ohms
+    # R0 = resistance at zero degrees Celsius in ohms (100 for Pt100, and 1000 for Pt1000)
+    # T = temperature in degrees Celsius
+    A = 3.9083*10**-3
+    B = -5.775*10**-7
+    C = -4.183*10**-12
+    # C = -4.183*10**-12 for T < 0 degrees Celsius
+    # C = 0 for T >= 0 degrees Celsius
+    R0 = 1000
+
+    cond = (T < 0)
+    R = np.piecewise(T, 
+        [cond, ~cond],
+        [
+        R0 * (1 + A*T[cond] + B*T[cond]**2 -100*C*T[cond]**3 + C*T[cond]**4),
+        R0 * (1 + A*T[~cond]  + B*T[~cond] **2) 
+        ]
+            )
+    # if T < 0:
+    #     R = R0 * (1 + A*T + B*T^2 -100*C*T^3 + C*T^4)
+    # else:
+    #     R = R0 * (1 + A*T + B*T^2)
+    return R
+
+def pt1000_interpolate():
+    Tlst = np.linspace(-50,800,num=851)
+    Rlst = pt1000_T_to_R(Tlst)
+    #print("R = " , Rlst)
+    return (lambda T: interp1d(Tlst,Rlst)(T), lambda R: interp1d(Rlst,Tlst)(R))
+
 
 def make_index_dict(data_dict):
     """
@@ -383,7 +417,7 @@ def plot_R_vs_P(avg_dict, plotname, plot_dir = plot_dir):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance [$\Omega$]")
 
     plt.grid(True)
@@ -396,7 +430,99 @@ def plot_R_vs_P(avg_dict, plotname, plot_dir = plot_dir):
                 format=format_im, dpi=dpi)
     ax1.cla()
 
-def fit_base_R(avg_dict, plotname):
+def plot_R_vs_P(avg_dict, plotname, plot_dir = plot_dir, inset = False):
+    ############## Resistance vs power plot
+    fig = plt.figure(0, figsize=(8,6.5))
+    ax1=plt.gca()
+    ax1.errorbar(avg_dict["P"],
+             avg_dict["R"],
+             yerr = avg_dict["R_err"],
+             xerr = avg_dict["P_err"],
+             fmt = ".",
+             #markersize=4,
+             label = f"data")
+    # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
+    #         label = f"moving average {mavg_len}s")
+
+    #plt.xticks(rotation = 45)
+
+    ax1.set_xlabel(r"Power [µW]")
+    ax1.set_ylabel(r"Resistance [$\Omega$]")
+        #Add secondary axis with current
+    def i_to_P(x):
+            f_int = interp1d(avg_dict["i"][~np.isnan(avg_dict["i"])],
+                    avg_dict["P"][~np.isnan(avg_dict["i"])]
+                    #  ,
+                    #  kind = "cubic"
+                    ,fill_value="extrapolate"
+                    )
+            return f_int(x)
+
+    def P_to_i(x):
+            f_int = interp1d(avg_dict["P"][~np.isnan(avg_dict["i"])],
+                            avg_dict["i"][~np.isnan(avg_dict["i"])]
+                            #,kind = "cubic"
+                            ,fill_value="extrapolate"
+                            )
+            out  = f_int(x.astype(float))
+            return out
+    secax = ax1.secondary_xaxis("top", functions=(P_to_i, i_to_P))
+    secax.set_xlabel('Current [mA]')
+    # secax.set_xticks([i/10 for i in range(0,30,5)])
+    i_lst = avg_dict["i"][~np.isnan(avg_dict["i"])]
+    xticks = [0] + list(np.round(np.linspace(i_lst[0]+i_lst[-1]*0.3 ,i_lst[-1]
+                                             , 8)
+                        , decimals=1))
+    secax.set_xticks(xticks
+                     )
+
+    if inset == True:
+        # dx = max(avg_dict["P"]) - min(avg_dict["P"]) 
+        # x1 = min(avg_dict["P"]) - dx * 0.001
+        # x2 = min(avg_dict["P"]) + dx * 0.01
+        # dy = max(avg_dict["R"]) - min(avg_dict["R"]) 
+        # y1 = min(avg_dict["R"]) - dy * 0.002
+        # y2 = min(avg_dict["R"]) + dy * 0.08
+
+        #BAsed on ordered list bottom 10
+        dx = avg_dict["P"][9] - avg_dict["P"][0] 
+        x1 = avg_dict["P"][0] - dx * 0.05
+        x2 = avg_dict["P"][9] + dx * 0.05
+        dy = avg_dict["R"][9] - avg_dict["R"][0] 
+        y1 = avg_dict["R"][0] - dy * 0.05
+        y2 = avg_dict["R"][9] + dy * 0.05
+
+        axins = ax1.inset_axes(
+            [0.62, 0.065, 0.36, 0.40],
+            xlim=(x1, x2), ylim=(y1, y2), #xticklabels=[], yticklabels=[],
+            )
+        # axins = ax1.inset_axes(
+        #     [1.06, 0.00, 1.07, 1.00],
+        #     xlim=(x1, x2), ylim=(y1, y2), #xticklabels=[], yticklabels=[]
+        #     )
+        axins.errorbar(avg_dict["P"],
+             avg_dict["R"],
+             yerr = avg_dict["R_err"],
+             xerr = avg_dict["P_err"],
+             fmt = ".",
+             # markersize=1,
+             label = f"data")
+        axins.grid(True)
+        ax1.indicate_inset_zoom(axins, edgecolor="black",label = None)
+        plotname = plotname + "_inset"
+        secax_ins = axins.secondary_xaxis("top", functions=(P_to_i, i_to_P))
+
+    plt.grid(True)
+    plt.legend(shadow=True)
+    plt.tight_layout()
+    format_im = 'png' #'pdf' or png
+    dpi = 300
+    plt.savefig(plot_dir + plotname
+                + '.{}'.format(format_im),
+                format=format_im, dpi=dpi, bbox_inches='tight')
+    ax1.cla()
+
+def fit_base_R(avg_dict, plotname, plot_dir = plot_dir, inset = False):
     # possibly undercuts 2nd order correction effects (R is left uncorrected)
     # def R_func(i, m, R_0, i_offset):
     #     u = (R_0 * (i + i_offset))/(1 - m * (i + i_offset)**2)
@@ -419,19 +545,44 @@ def fit_base_R(avg_dict, plotname):
     p_arr = i_arr * v_arr
     r_arr = v_arr / i_arr
     #fit
-    # print("fit ydata:", i_arr)
-    # print('len(ydata):', len(i_arr))
-    # print('len(v_err):', len(v_err))
-    # print('len(avg_dict["v_err"]):', len(avg_dict["v_err"]))
-    # print("np.isnan(avg_dict['v_err'])",np.isnan(avg_dict["v_err"]))
-    # print("np.isnan(avg_dict['i'])",np.isnan(avg_dict["i"]))
+    # #HACK:
+    # def v_func(i, m, R_0, i_offset):
+    #     i_offset = 0.000105
+    #     v = (R_0 * (i + i_offset))/(1 - m * (i + i_offset)**2)
+    #     return v
+    # popt, pcov = curve_fit(v_func, i_arr, v_arr, p0 = [0.135,66.14],
+    #                        sigma = v_err, absolute_sigma=True,
+    #                        #bounds = ((0.1,60,-0.00035),(10,75, -0.00025))
+    #                        bounds = ((0.1,60),(10,75))
+    # )
+    # #End HACK
+
+    # #HACK test V offset
+    # def v_func(i, m, R_0, i_offset, v_offset):
+    #     v = (R_0 * (i + i_offset))/(1 - m * (i + i_offset)**2) + v_offset
+    #     return v
+    # popt, pcov = curve_fit(v_func, i_arr, v_arr, p0 = [0.135,66.14,-0.000105,0],
+    #                     sigma = v_err, absolute_sigma=True,
+    #                     #bounds = ((0.1,60,-0.00035),(10,75, -0.00025))
+    #                 bounds = ((0.1,60,-0.0003, -0.01),(10,75, 0.0003, +0.01))
+    # )
+    # v_off = popt[3]
+    # v_arr_off = v_arr + v_off
+    # #HACK
+    # v_arr = v_arr_off
+
     popt, pcov = curve_fit(v_func, i_arr, v_arr, p0 = [0.135,66.14,-0.000105],
                            sigma = v_err, absolute_sigma=True,
                            #bounds = ((0.1,60,-0.00035),(10,75, -0.00025))
                            bounds = ((0.1,60,-0.0005),(10,75, 0.0005))
     )
 
+
     offset = popt[2]
+    # #HACK
+    # offset = -0.000105
+    # popt[2] = offset
+    ###
     offset_err = pcov[2][2]
     i_arr_off = i_arr + offset
     i_err_off = np.sqrt(i_err **2 + offset_err **2)
@@ -450,22 +601,101 @@ def fit_base_R(avg_dict, plotname):
              xerr = P_err(i_arr_off, i_err_off, v_arr, v_err),
              fmt = ".",
              # markersize=1,
-             label = f"data, offset_{1000*offset:3f} [µA]")
+             label = f"data, offset {1000*offset:.4f} [µA]")
 
     # Plot Fit
     xdata=p_arr
     plt.plot(xdata, v_func(i_arr, *popt)/i_arr_off, 'r-',
-         label=(('fit: m=%5.3f [Ohm/µW ], R_0=%5.3f [Ohm],' 
-                  + '\n i_off=%5.6f [mA]')
-                % tuple(popt))
-                )
+         label=('fit: m=%5.3f [Ohm/µW],' % popt[0]
+                +'\n' +  r"    $R_0=$" "%5.3f [Ohm]," % popt[1]
+                + '\n' + r"    $I_{\rm off}$=" + f"{1000*popt[2]:5.4f} [µA]"
+                ))
     # ax1.plot(t_avg_series-t_series[0],v_avg_series*1000,
     #         label = f"moving average {mavg_len}s")
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance [$\Omega$]")
+
+    ######
+    #Add secondary axis with current
+    def i_to_P(x):
+            f_int = interp1d(avg_dict["i"][~np.isnan(avg_dict["i"])],
+                    avg_dict["P"][~np.isnan(avg_dict["i"])]
+                    #  ,
+                    #  kind = "cubic"
+                    ,fill_value="extrapolate"
+                    )
+            return f_int(x)
+
+    def P_to_i(x):
+            f_int = interp1d(avg_dict["P"][~np.isnan(avg_dict["i"])],
+                            avg_dict["i"][~np.isnan(avg_dict["i"])]
+                            #,kind = "cubic"
+                            ,fill_value="extrapolate"
+                            )
+            out  = f_int(x.astype(float))
+            return out
+    secax = ax1.secondary_xaxis("top", functions=(P_to_i, i_to_P))
+    secax.set_xlabel('Current [mA]')
+    # secax.set_xticks([i/10 for i in range(0,30,5)])
+    i_lst = avg_dict["i"][~np.isnan(avg_dict["i"])]
+    xticks = [0] + list(np.round(np.linspace(i_lst[0]+i_lst[-1]*0.3 ,i_lst[-1]
+                                             , 8)
+                        , decimals=1))
+    secax.set_xticks(xticks
+                     )
+    #HACK to set xtiks on low current data
+    if inset == False:
+        secax.set_xticks([0.0,0.03,0.06,0.09]
+                     )
+
+    if inset == True:
+        # dx = max(avg_dict["P"]) - min(avg_dict["P"]) 
+        # x1 = min(avg_dict["P"]) - dx * 0.001
+        # x2 = min(avg_dict["P"]) + dx * 0.01
+        # dy = max(avg_dict["R"]) - min(avg_dict["R"]) 
+        # y1 = min(avg_dict["R"]) - dy * 0.002
+        # y2 = min(avg_dict["R"]) + dy * 0.08
+
+        #BAsed on ordered list bottom 10
+        xlst = i_arr_off * v_arr
+        ylst = v_arr / i_arr_off
+        dx = xlst[9] - xlst[0] 
+        x1 = xlst[0] - dx * 0.05
+        x2 = xlst[9] + dx * 0.05
+        dy = ylst[9] - ylst[0] 
+        y1 = ylst[0] - dy * 0.05
+        y2 = ylst[9] + dy * 0.05
+
+        axins = ax1.inset_axes(
+            [0.62, 0.065, 0.36, 0.40],
+            xlim=(x1, x2), ylim=(y1, y2), #xticklabels=[], yticklabels=[],
+            )
+        # axins = ax1.inset_axes(
+        #     [1.06, 0.00, 1.07, 1.00],
+        #     xlim=(x1, x2), ylim=(y1, y2), #xticklabels=[], yticklabels=[]
+        #     )
+        axins.errorbar(i_arr_off * v_arr ,
+             v_arr / i_arr_off,
+             yerr = R_err(i_arr_off, i_err_off, v_arr, v_err),
+             xerr = P_err(i_arr_off, i_err_off, v_arr, v_err),
+             fmt = ".",
+             # markersize=1,
+             label = f"data with offset")
+        axins.plot(xdata, v_func(i_arr, *popt)/i_arr_off, 'r-',
+        #  label=(('fit: m=%5.3f [Ohm/µW],\n R_0=%5.3f [Ohm],' 
+        #           + '\n i_off=%5.6f [mA]')
+        #         % tuple(popt))
+                )
+        axins.grid(True)
+        ax1.indicate_inset_zoom(axins, edgecolor="black",label = None)
+        plotname = plotname + "_inset"
+        secax_ins = axins.secondary_xaxis("top", functions=(P_to_i, i_to_P))
+
+
+    ######
 
     plt.grid(True)
     plt.legend(shadow=True)
@@ -489,14 +719,15 @@ def fit_base_R(avg_dict, plotname):
              yerr = avg_dict["R_err"][~np.isnan(avg_dict["i"])],
              xerr = avg_dict["i_err"][~np.isnan(avg_dict["i"])],
              fmt = ".",# markersize=1,
-             label = f"data, offset_{1000*offset:3f} [µA]")
+             #label = f"data, offset_{1000*offset:3f} [µA]"
+             label = f"data with offset")
 
     # Plot Fit
     xdata=i_arr
     plt.plot(xdata, v_func(i_arr, *popt)/i_arr, 'r-',
-         label=(('fit: m=%5.3f [Ohm/µW ], R_0=%5.3f [Ohm],' 
+         label=(('fit: m=%5.3f [Ohm/µW],\n R_0=%5.3f [Ohm],' 
                   + '\n i_off=%5.6f [mA]')
-                % tuple(popt))
+                % tuple(popt[0:3]))
                 )
     ax1.set_xlabel(r"current [mA]")
     ax1.set_ylabel(r"Resistance [$\Omega$]")
@@ -513,7 +744,7 @@ def fit_base_R(avg_dict, plotname):
 
     return popt, pcov
 
-def basic_R_over_P_calib(avg_dict, plotname):
+def basic_R_over_P_calib(avg_dict, plotname, plot_dir = plot_dir):
     # fit 0.9mA to 1.1mA range directly with a
     def fit_func(P, m, R_0):
         R = R_0 + m * P
@@ -551,7 +782,7 @@ def basic_R_over_P_calib(avg_dict, plotname):
     # Plot Fit
     xdata=p_arr
     plt.plot(xdata, fit_func(p_arr, *popt), 'r-',
-         label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW ],
+         label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW],
          R_0={:5.3f} $\pm$ {:2.1e} [Ohm]'''.format(
              popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
                   ))
@@ -559,8 +790,38 @@ def basic_R_over_P_calib(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance [$\Omega$]")
+
+    #Add secondary axis with current
+    def i_to_P(x):
+            f_int = interp1d(avg_dict["i"][~np.isnan(avg_dict["i"])],
+                    avg_dict["P"][~np.isnan(avg_dict["i"])]
+                    #  ,
+                    #  kind = "cubic"
+                    ,fill_value="extrapolate"
+                    )
+            return f_int(x)
+
+    def P_to_i(x):
+            f_int = interp1d(avg_dict["P"][~np.isnan(avg_dict["i"])],
+                            avg_dict["i"][~np.isnan(avg_dict["i"])]
+                            #,kind = "cubic"
+                            ,fill_value="extrapolate"
+                            )
+            out  = f_int(x.astype(float))
+            return out
+    secax = ax1.secondary_xaxis("top", functions=(P_to_i, i_to_P))
+    secax.set_xlabel('Current [mA]')
+    # secax.set_xticks([i/10 for i in range(0,30,5)])
+    i_lst = avg_dict["i"][~np.isnan(avg_dict["i"])]
+    xticks = [0] + list(np.round(np.linspace(i_lst[0]+i_lst[-1]*0.3 ,i_lst[-1]
+                                             , 8)
+                        , decimals=1))
+    secax.set_xticks(xticks
+                     )
+
+
 
     plt.grid(True)
     plt.legend(shadow=True)
@@ -606,8 +867,18 @@ def basic_R_over_P_calib(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance [$\Omega$]")
+
+    secax = ax1.secondary_xaxis("top", functions=(P_to_i, i_to_P))
+    secax.set_xlabel('Current [mA]')
+    # secax.set_xticks([i/10 for i in range(0,30,5)])
+    i_lst = avg_dict["i"][~np.isnan(avg_dict["i"])]
+    xticks = [0] + list(np.round(np.linspace(i_lst[0]+i_lst[-1]*0.3 ,i_lst[-1]
+                                             , 8)
+                        , decimals=1))
+    secax.set_xticks(xticks
+                     )
 
     ax1.grid(True)
     ax1.legend(shadow=True, fontsize = 13)
@@ -626,12 +897,12 @@ def basic_R_over_P_calib(avg_dict, plotname):
     # Plot Fit
     xdata=p_arr
     ax2.plot(xdata, 0.0 * fit_func(p_arr, *popt), 'r-',
-        #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW ],
+        #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW],
         #  R_0={:5.3f} $\pm$ {:2.1e} [Ohm]'''.format(
         #      popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
         #           ))
                 )
-    ax2.set_xlabel(r"power [µW]")
+    ax2.set_xlabel(r"Power [µW]")
     ax2.set_ylabel(r"Residuals [$\Omega$]")
 
     ax2.grid(True)
@@ -683,7 +954,7 @@ def basic_R_over_P_calib(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance Pt1000 [$\Omega$]")
 
     plt.grid(True)
@@ -749,7 +1020,7 @@ def plot_poly_k(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance [$\Omega$]")
 
     plt.grid(True)
@@ -793,7 +1064,7 @@ def plot_poly_k(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance [$\Omega$]")
 
     ax1.grid(True)
@@ -813,12 +1084,12 @@ def plot_poly_k(avg_dict, plotname):
     # Plot Fit
     xdata=p_arr
     ax2.plot(xdata, 0.0 * fit_func(p_arr, *popt), 'r-',
-        #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW ],
+        #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW],
         #  R_0={:5.3f} $\pm$ {:2.1e} [Ohm]'''.format(
         #      popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
         #           ))
                 )
-    ax2.set_xlabel(r"power [µW]")
+    ax2.set_xlabel(r"Power [µW]")
     ax2.set_ylabel(r"Residuals [$\Omega$]")
 
     ax2.grid(True)
@@ -957,7 +1228,7 @@ def plot_poly_k_P_over_R(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_ylabel(r"power [µW]")
+    ax1.set_ylabel(r"Power [µW]")
     ax1.set_xlabel(r"Resistance [$\Omega$]")
 
     plt.grid(True)
@@ -1001,7 +1272,7 @@ def plot_poly_k_P_over_R(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_ylabel(r"power [µW]")
+    ax1.set_ylabel(r"Power [µW]")
     ax1.set_xlabel(r"Resistance [$\Omega$]")
 
     ax1.grid(True)
@@ -1021,7 +1292,7 @@ def plot_poly_k_P_over_R(avg_dict, plotname):
     # Plot Fit
     xdata=r_arr
     ax2.plot(xdata, 0.0 * fit_func(r_arr, *popt), 'r-',
-        #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW ],
+        #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW],
         #  R_0={:5.3f} $\pm$ {:2.1e} [Ohm]'''.format(
         #      popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
         #           ))
@@ -1183,7 +1454,7 @@ def plot_interval_k(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"k [µW/$\Omega$]")
 
     plt.grid(True)
@@ -1325,7 +1596,7 @@ def plot_interval_k(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"m [$\Omega$/µW]")
 
     plt.grid(True)
@@ -1342,7 +1613,7 @@ def plot_interval_k(avg_dict, plotname):
 
     
 
-def P14_R_over_P_calib(avg_dict, plotname):
+def P14_R_over_P_calib(avg_dict, plotname, plot_dir = plot_dir):
     # fit 0.9mA to 1.1mA range directly
 
     i_arr = avg_dict["i"][~np.isnan(avg_dict["i"])]
@@ -1381,7 +1652,7 @@ def P14_R_over_P_calib(avg_dict, plotname):
 
     # Plot Fit
     xdata=p_arr
-    label=(("fit: m={:5.4f} $\pm$ {:2.1e} [$\Omega$/µW ],".format(
+    label=(("fit: m={:5.4f} $\pm$ {:2.1e} [$\Omega$/µW],".format(
              popt[0], np.sqrt(pcov[0][0]))
           +" \n R_0={:5.3f} $\pm$ {:2.1e} [$\Omega$/µW]".format(
               popt[1], np.sqrt(pcov[1][1])) 
@@ -1394,7 +1665,7 @@ def P14_R_over_P_calib(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance [$\Omega$]")
 
     plt.grid(True)
@@ -1432,7 +1703,7 @@ def P14_R_over_P_calib(avg_dict, plotname):
 
     # Plot Fit
     xdata=p_arr
-    label=(("fit: m={:5.4f} $\pm$ {:2.1e} [$\Omega$/µW ],".format(
+    label=(("fit: m={:5.4f} $\pm$ {:2.1e} [$\Omega$/µW],".format(
              popt[0], np.sqrt(pcov[0][0]))
           +" \n R_0={:5.3f} $\pm$ {:2.1e} [$\Omega$/µW]".format(
               popt[1], np.sqrt(pcov[1][1])) 
@@ -1444,7 +1715,7 @@ def P14_R_over_P_calib(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance [$\Omega$]")
 
     ax1.grid(True)
@@ -1464,12 +1735,12 @@ def P14_R_over_P_calib(avg_dict, plotname):
     # Plot Fit
     xdata=p_arr
     ax2.plot(xdata, 0.0 * fit_func(p_arr, *popt), 'r-',
-        #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW ],
+        #  label=(('''fit: m={:5.4f} $\pm$ {:2.1e} [Ohm/µW],
         #  R_0={:5.3f} $\pm$ {:2.1e} [Ohm]'''.format(
         #      popt[0], np.sqrt(pcov[0,0]), popt[1], np.sqrt(pcov[1,1])) 
         #           ))
                 )
-    ax2.set_xlabel(r"power [µW]")
+    ax2.set_xlabel(r"Power [µW]")
     ax2.set_ylabel(r"Residuals [$\Omega$]")
 
     ax2.grid(True)
@@ -1521,7 +1792,7 @@ def P14_R_over_P_calib(avg_dict, plotname):
 
     #plt.xticks(rotation = 45)
 
-    ax1.set_xlabel(r"power [µW]")
+    ax1.set_xlabel(r"Power [µW]")
     ax1.set_ylabel(r"Resistance Pt1000 [$\Omega$]")
 
     plt.grid(True)
@@ -2053,7 +2324,7 @@ if __name__ =="__main__":
 
     # #plt.xticks(rotation = 45)
 
-    # ax1.set_xlabel(r"power [µW]")
+    # ax1.set_xlabel(r"Power [µW]")
     # ax1.set_ylabel(r"Resistance [$\Omega$]")
 
     # plt.grid(True)
