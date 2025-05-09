@@ -516,7 +516,7 @@ class Beamfit():
     #################################################
 
     # save to run dict:
-    def save_fit_results(self, popt_abs, pcov_abs):
+    def save_fit_results(self, popt_abs, pcov_abs, fit_y0=False):
         rd = self.run_dict
         rd["fit_result"] = {}
         rd["fit_result_errors"] = {}
@@ -539,6 +539,11 @@ class Beamfit():
         # currently not fitted
         rd["fit_result_errors"]["theta_max"] = None
         rd["fit_result_errors"]["y0"] = None
+
+        # HACK
+        if fit_y0:
+            rd["fit_result"]["y0"] = popt_abs[4]
+            rd["fit_result_errors"]["y_0"] = np.sqrt(pcov_abs[4,4])
 
         # Save to file
         self.save_json_run_dict(dict_path= self.run_dict_path, 
@@ -763,7 +768,8 @@ class Beamfit():
         return (popt_abs, pcov_abs)
     
     def fit_d_ch(self,z_arr, p_arr, p_err_arr, 
-                        plotname = "fit_d_ch_plot"
+                        plotname = "fit_d_ch_plot",
+                        fit_y0 = False
                      ):
         # Crude function for fitting a dataset not equal to the run dict data
         # file. I suppose that really should not be the intended use case. 
@@ -803,9 +809,9 @@ class Beamfit():
 
         A_bound = rd["fit_start"]["A_bound"]
         # ##### All parameters except theta_max
-        P_int_fit = lambda z_space, l_eff, A , z0, P_0, d_ch: (
-            self.P_int_penumbra_dch(
-                z_space, l_eff, theta_max, z0, A, P_0, d_ch))
+        # P_int_fit = lambda z_space, l_eff, A , z0, P_0, d_ch: (
+        #         self.P_int_penumbra_dch(
+        #             z_space, l_eff, theta_max, z0, A, P_0, d_ch))
 
         # HACK to include r_c as well
         r_h_0 = 3.0
@@ -814,20 +820,44 @@ class Beamfit():
         # concentration  of gas
         r_c_0 = 0.4
         # ##### All parameters except theta_max
-        P_int_fit = lambda z_space, l_eff, A , z0, P_0, d_ch: (
-            self.P_int_penumbra_3par(
-                z_space, l_eff, theta_max, z0, A, P_0, d_ch, r_h_0, r_c_0))
+        if fit_y0:
+            # P_int_fit = lambda z_space, l_eff, A , z0, P_0, d_ch, y0: (
+            #     self.P_int_penumbra_3par(
+            #         z_space, l_eff, theta_max, z0, A, P_0, d_ch, r_h_0, r_c_0,
+            #         y0 = y0))
+            P_int_fit = lambda z_space, l_eff, A , z0, P_0, y0: (
+                self.P_int_penumbra_3par(
+                    z_space, l_eff, theta_max, z0, A, P_0, d_ch_0, r_h_0, r_c_0,
+                    y0 = y0))
 
-        # Use errors as absolute to get proper error estimation
-        popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
-                            sigma = P_err_arr,
-                            absolute_sigma= False,
-                            p0 = [l_eff, A,  z0, P_0, d_ch_0], 
-                            bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1,
-                                     d_ch_0 - 1.5],
-                                    [20,  A_bound[1],  z0 + 1, P_0 + 0.1,
-                                     d_ch_0 + 1.5])
-                            )
+            
+
+            # Use errors as absolute to get proper error estimation
+            y_base = self.y0_default
+            popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
+                                sigma = P_err_arr,
+                                absolute_sigma= False,
+                                p0 = [l_eff, A,  z0, P_0, y_base], 
+                                bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1,
+                                         y_base -5],
+                                        [20,  A_bound[1],  z0 + 1, P_0 + 0.1,
+                                         y_base +20])
+                                )
+        else:
+            P_int_fit = lambda z_space, l_eff, A , z0, P_0, d_ch: (
+                self.P_int_penumbra_3par(
+                    z_space, l_eff, theta_max, z0, A, P_0, d_ch, r_h_0, r_c_0))
+
+            # Use errors as absolute to get proper error estimation
+            popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
+                                sigma = P_err_arr,
+                                absolute_sigma= False,
+                                p0 = [l_eff, A,  z0, P_0, d_ch_0], 
+                                bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1,
+                                        d_ch_0 - 1.5],
+                                        [20,  A_bound[1],  z0 + 1, P_0 + 0.1,
+                                        d_ch_0 + 1.5])
+                                )
         ######
 
         print(popt_abs, pcov_abs)
@@ -835,7 +865,7 @@ class Beamfit():
             print(f"parameter {i:.0f}: {p:.5f}"
                 +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
         # save to file
-        self.save_fit_results(popt_abs, pcov_abs)
+        self.save_fit_results(popt_abs, pcov_abs, fit_y0=fit_y0)
             
         #### plot
         z_space = np.linspace(-11,20,num=100)
@@ -846,12 +876,35 @@ class Beamfit():
         # Option to add table of parameters
         if True:
             mpl.rc('text', usetex=True)
-            col_labels=["parameter",'fit value']
-            row_labels=[r'$l_{\rm eff}$',r'$A$',r'$z_0$', r"$P_0$", r"$d_{ch}$"]
-            table_vals=[[f"{popt_abs[i]:.2f}"+ r"$\pm$"
-                     + f"{np.sqrt(pcov_abs[i,i]):.2f}"] 
+            # col_labels=["parameter",'fit value']
+            # row_labels=[r'$l_{\rm eff}$',r'$A$',r'$z_0$', r"$P_0$",
+            #             r"$d_{ch}$"]
+           
+            # table_vals=[[f"{popt_abs[i]:.2f}"+ r"$\pm$"
+            #          + f"{np.sqrt(pcov_abs[i,i]):.2f}"
+            #          if np.sqrt(pcov_abs[i,i])>0.01
+            #          else f"{popt_abs[i]:.2f}"+ r"$\pm$"
+            #          + f"{np.sqrt(pcov_abs[i,i]):.1e}"] 
+            #          for i in range(len(popt_abs))]
+            
+            col_labels=["parameter",'value', 'error']
+            if fit_y0:
+                # row_labels=[r'$l_{\rm eff}$',r'$A$',r'$z_0$', r"$P_0$",
+                #         r"$d_{ch}$", r"$y_{0}$"]
+                row_labels=[r'$l_{\rm eff}$',r'$A$',r'$z_0$', r"$P_0$",
+                            r"$y_{0}$"]
+            else:
+                row_labels=[r'$l_{\rm eff}$',r'$A$',r'$z_0$', r"$P_0$",
+                            r"$d_{ch}$"]
+            
+            table_vals=[[f"{popt_abs[i]:.2f}"
+                     , f"{np.sqrt(pcov_abs[i,i]):.2f}"]
+                     if np.sqrt(pcov_abs[i,i])>0.01
+                     else [f"{popt_abs[i]:.2f}"
+                     , f"{np.sqrt(pcov_abs[i,i]):.0e}"]
                      for i in range(len(popt_abs))]
-            table = r'''\begin{tabular}{ c | c } '''
+            print("table_vals: ", table_vals)
+            table = r'''\begin{tabular}{ c''' + (len(col_labels)-1)*" | c" +"}"
             #add column headers
             table = table + " & ".join(col_labels) + r" \\ \hline"
             # Add rows:
