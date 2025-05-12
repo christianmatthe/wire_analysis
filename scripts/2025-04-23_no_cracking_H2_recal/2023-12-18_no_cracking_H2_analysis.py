@@ -79,20 +79,47 @@ for i,TC in enumerate(TC_lst):
         T = T_lst[i],
         l_eff = rd["fit_result"]["l_eff"],
         theta_max = rd["fit_result"]["theta_max"],
+        y0 = rd["fit_result"]["y0"],
     )[0]
     ac_err_leff = [ac - calc_accomodation_coefficient(
         p_measured = p_measured,
         T = T_lst[i],
         l_eff = rd["fit_result"]["l_eff"] - rd["fit_result_errors"]["l_eff"],
         theta_max = rd["fit_result"]["theta_max"],
+        y0 = rd["fit_result"]["y0"],
     )[0], 
     ac - calc_accomodation_coefficient(
         p_measured = p_measured,
         T = T_lst[i],
         l_eff = rd["fit_result"]["l_eff"] + rd["fit_result_errors"]["l_eff"],
         theta_max = rd["fit_result"]["theta_max"],
+        y0 = rd["fit_result"]["y0"],
     )[0]
     ]
+
+    # # HACK
+    # ac = calc_accomodation_coefficient(
+    #     p_measured = p_measured,
+    #     T = T_lst[i],
+    #     l_eff = rd["fit_result"]["l_eff"],
+    #     theta_max = rd["fit_result"]["theta_max"],
+    #     y0 = 40.5,
+    # )[0]
+    # ac_err_leff = [ac - calc_accomodation_coefficient(
+    #     p_measured = p_measured,
+    #     T = T_lst[i],
+    #     l_eff = rd["fit_result"]["l_eff"] - rd["fit_result_errors"]["l_eff"],
+    #     theta_max = rd["fit_result"]["theta_max"],
+    #     y0 = 40.5,
+    # )[0], 
+    # ac - calc_accomodation_coefficient(
+    #     p_measured = p_measured,
+    #     T = T_lst[i],
+    #     l_eff = rd["fit_result"]["l_eff"] + rd["fit_result_errors"]["l_eff"],
+    #     theta_max = rd["fit_result"]["theta_max"],
+    #     y0 = 40.5,
+    # )[0]
+    # ]
 
 
     print(f"ac_err_leff", ac_err_leff)
