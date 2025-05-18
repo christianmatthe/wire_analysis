@@ -210,7 +210,7 @@ def background_subtract_p(low_pd, high_pd):
 #                               "200TC"
 #                             ] 
 H2_indicators = ["200TC","300TC","390TC","475TC"
-                            ] 
+                ]
 
 #Run for all intermediate Temperatures
 for i,indicator in enumerate(H2_indicators):
@@ -287,20 +287,20 @@ for i,indicator in enumerate(H2_indicators):
     beamfit.save_json_run_dict()
     ############### END TODO
 
-    print("dch and y0 fit wait ~??min")
-    beamfit.fit_d_ch(z_arr=np.asarray(z_lst).flatten(),
-                            p_arr=np.array(p_excess_lst).flatten()
-                            , p_err_arr = np.array(p_excess_err_lst).flatten()
-                    ,plotname="y0_fit_plot",
-                    fit_y0=True
-                    )
-    
-    # print("dch fit wait ~??min")
+    # print("dch and y0 fit wait ~??min")
     # beamfit.fit_d_ch(z_arr=np.asarray(z_lst).flatten(),
     #                         p_arr=np.array(p_excess_lst).flatten()
     #                         , p_err_arr = np.array(p_excess_err_lst).flatten()
-    #                 ,plotname="dch_fit_plot"
+    #                 ,plotname="y0_fit_plot",
+    #                 fit_y0=True
     #                 )
+    
+    print("dch fit wait ~??min")
+    beamfit.fit_d_ch(z_arr=np.asarray(z_lst).flatten(),
+                            p_arr=np.array(p_excess_lst).flatten()
+                            , p_err_arr = np.array(p_excess_err_lst).flatten()
+                    ,plotname="dch_fit_plot"
+                    )
 
 
 

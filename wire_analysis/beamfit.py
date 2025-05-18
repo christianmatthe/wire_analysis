@@ -39,6 +39,7 @@ mpl.rcParams['font.family'] = 'cmu serif'
 #   - Properly save outpput for further use
 #   - Take output of flow_on_off_cycle_analysis_2.py
 #
+degree = np.pi/180 # convert form rad to degree
 
 class Beamfit():
     """
@@ -105,6 +106,24 @@ class Beamfit():
     #     with open(dict_path, 'r', encoding='utf-8') as f:
     #         dict_load = json.load(f)
     #     return dict_load
+
+    #####HACK to incuce calc_norm
+    def integrate_H_angles_1D(self, theta_lim = [0,np.pi/2], l_eff = 7.96, y0 = 35.17,
+                        theta_max = 90 * degree, norm_factor = 1):
+        # Integral over phi  from [0, 2 * np.pi]
+        integrant = lambda theta: (norm_factor * 2 * np.pi
+                            * self.beam_profile(theta, l_eff, theta_max) 
+                                * np.sin(theta)
+                            )
+        result, err = integrate.quad(integrant,
+                                    theta_lim[0], theta_lim[1] # theta_lims
+                                    )
+        return result
+        
+    def calc_norm_factor(self, l_eff
+                        ):
+        return 1/self.integrate_H_angles_1D(l_eff = l_eff)
+    ##################
 
     def save_json_run_dict(self, dict_path = None, dict = None):
         # If no values are supplied save the current run_dict to the current 
@@ -450,6 +469,7 @@ class Beamfit():
         theta_outer = np.arctan((radius_housing + radius_cap)
                                 /distance_cap_housing)
 
+
         # Edit of P_int_fast_array with selectabel eta
         z_space = z_pos
         result = np.zeros_like(z_space)
@@ -468,6 +488,16 @@ class Beamfit():
                                             )   
             result[i] = integrate.quad(integrant, -10, 10,
                                 epsabs=1e-1, epsrel=1e-1)[0]
+            
+        #WARNIN NOTE NOTE NOTE 
+        #changing this  and only this functionto be normalized
+        nf  = self.calc_norm_factor(l_eff = l_eff)
+        d_wire = 5e-6 # wire thickness not included in P_fit (folded into A)
+        # given in m
+        #y0 = 35.17 # fit in mm conver to m -> times 1e-3
+        #Integration was performed in mm -> 
+        # need to include another factor of 1e-3 from dx[mm]=1e-3*dx[m]
+        result = result /(1e-3 * (((y0*1e-3)**2)/(nf*d_wire)))
         return A * result + P_0
 
     # define dual fit 
@@ -831,14 +861,14 @@ class Beamfit():
                     y0 = y0))
 
             
-
+            # HACK bounds
             # Use errors as absolute to get proper error estimation
             y_base = self.y0_default
             popt_abs, pcov_abs = curve_fit(P_int_fit, z_arr, P_arr,
                                 sigma = P_err_arr,
                                 absolute_sigma= False,
                                 p0 = [l_eff, A,  z0, P_0, y_base], 
-                                bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1,
+                                bounds=([1, A_bound[0]*0.3,  z0 - 1, P_0 - 0.1,
                                          y_base -5],
                                         [20,  A_bound[1],  z0 + 1, P_0 + 0.1,
                                          y_base +20])
@@ -853,7 +883,7 @@ class Beamfit():
                                 sigma = P_err_arr,
                                 absolute_sigma= False,
                                 p0 = [l_eff, A,  z0, P_0, d_ch_0], 
-                                bounds=([2, A_bound[0],  z0 - 1, P_0 - 0.1,
+                                bounds=([1, A_bound[0]*0.3,  z0 - 1, P_0 - 0.1,
                                         d_ch_0 - 1.5],
                                         [20,  A_bound[1],  z0 + 1, P_0 + 0.1,
                                         d_ch_0 + 1.5])
@@ -896,12 +926,19 @@ class Beamfit():
             else:
                 row_labels=[r'$l_{\rm eff}$',r'$A$',r'$z_0$', r"$P_0$",
                             r"$d_{ch}$"]
+                # unit_labels = [r'1',r'${\rm µW}/{\rm mm}^2$', r'mm', 
+                #             r'$\mu {\rm W}$', r'mm']
             
             table_vals=[[f"{popt_abs[i]:.2f}"
                      , f"{np.sqrt(pcov_abs[i,i]):.2f}"]
                      if np.sqrt(pcov_abs[i,i])>0.01
                      else [f"{popt_abs[i]:.2f}"
                      , f"{np.sqrt(pcov_abs[i,i]):.0e}"]
+
+                    if popt_abs[i]>0.095
+                    else [f"{popt_abs[i]:.1e}"
+                     , f"{np.sqrt(pcov_abs[i,i]):.0e}"]
+
                      for i in range(len(popt_abs))]
             print("table_vals: ", table_vals)
             table = r'''\begin{tabular}{ c''' + (len(col_labels)-1)*" | c" +"}"
@@ -934,8 +971,7 @@ class Beamfit():
             , z_space,P_space_eye, scale_residuals=True, 
             plot_angles=True, z0=popt_abs[2],
             theta_max=theta_max/self.degree,
-            l_eff_str =(f"{popt_abs[0]:.2f}"+ r"$\pm$"
-                     + f"{np.sqrt(pcov_abs[0,0]):.2f}"),
+            l_eff_str = None,
                      plotname = plotname,
                      table_string = table)
         return (popt_abs, pcov_abs)
@@ -1076,7 +1112,7 @@ class Beamfit():
         # Plot Fit
         #xdata=p_arr
         if l_eff_str == None:
-            ax1.plot(z_space, P_space_eye, "r-", label = r"$P_{fit}$")
+            ax1.plot(z_space, P_space_eye, "r-", label = r"$P_{\rm fit}$")
         else:
             # ax1.plot(z_space, P_space_eye, "r-", label = r"$P_{fit}$" 
             #         + r", $l_{eff}=$" + l_eff_str)
@@ -1162,7 +1198,7 @@ class Beamfit():
         if table_string == None:
             pass
         else:
-            plt.text(0.02,0.02,table_string,size=12,
+            plt.text(0.2,0.02,table_string,size=12,
             horizontalalignment='left',
             verticalalignment='bottom', transform=ax1.transAxes,
             backgroundcolor = "w")

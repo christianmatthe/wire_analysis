@@ -69,9 +69,10 @@ def predict_power_H2(T, x_lims = [-10, 10],
     z0 = 0,
     y0=  35.17,
     err = 0.01,
+    flow = 1 * 4.478 * 10**17 #sccm
             ):
-    sccm = 4.478 * 10**17 # particles per second
-    flow = 1 * sccm
+    #sccm = 4.478 * 10**17 # particles per second
+    #flow = 1 * sccm
 
     #TODO Check if the detour is necessary or w ecould just start with the
     #  weighted interal
@@ -83,11 +84,42 @@ def predict_power_H2(T, x_lims = [-10, 10],
                 y0=  y0,
                 err = err,)
     T_wire = np.array([350])  # Kelvins # SUPER ROUGH
-    power_H2 = (Cv(T) * (T - T_wire)  # [j/mol]
+    power_H2 = ((Cv(T) * (T) - Cv(T_wire) * (T_wire))  # [j/mol]
             * (1/N_A) # convert from particle nmber to number of mol
             * flow * integral # Number of particles hitting wire
                  )
     return power_H2
+
+def ac_from_Abg(Abg, T,
+    # l_eff = 7.96,
+    # theta_max =  90 * degree,
+    # z0 = 0,
+    # y0=  35.17,
+    # err = 0.01,
+    flow = 1 * 4.478 * 10**17 #sccm
+    ):
+    # nf  = calc_norm_factor(l_eff = rd["fit_result"]["l_eff"])
+    # eta_norm = 1.5 # Approimate effective normallization required for sim norm
+    # d_wire = 5e-6 # wire thickness not included in P_fit (folded into A)
+    # # given in m
+    # y0 = 35.17e-3 # in m
+    # # Transform from mm^2 to m^2 -> /1e6
+    # #Integration was performed in mm -> need to include another factor of 1e-3
+    # #ac_alt_lst.append(ac_alt* ((y0**2)/(nf*eta_norm*d_wire)))
+    # ac_alt_lst.append(ac_alt*1e-3 * ((y0**2)/(nf*d_wire)))
+    # # based on which factors are included in 
+    # # .beamshape integrateH_on_plane_1D_etaW
+    # # but not in simplified  P_int_penumbra_3par 
+    # # where these are instead subsumed in A
+    # # It seems eta_w does not need to be included, becasue it is actually in 
+    # # P_int_penumbra_3par 
+
+
+    T_wire = np.array([350])  # Kelvins # SUPER ROUGH
+    ac = Abg/ (flow * ((Cv(T) * (T) - Cv(T_wire) * (T_wire))  # [j/mol]
+            * (1/N_A)) # convert from particle nmber to number of mol)
+                )
+    return ac
 
 # TODO Function for trasnforming from PID setpoint to (estimated) temperature
 def TC_to_T_Hack(TC_val):
@@ -109,7 +141,9 @@ def calc_accomodation_coefficient(p_measured, T, x_lims = [-10, 10],
     theta_max =  90 * degree,
     z0 = 0,
     y0=  35.17,
-    err = 0.01,):
+    err = 0.01,
+    flow = 1 * 4.478 * 10**17 #sccm
+    ):
 
 
     # Effective total wire efficiency estimate
@@ -123,7 +157,9 @@ def calc_accomodation_coefficient(p_measured, T, x_lims = [-10, 10],
                 theta_max =  theta_max,
                 z0 = z0,
                 y0=  y0,
-                err = err,)
+                err = err,
+                flow = flow # in  number of particles 1sccm =4.478 * 10**17 
+                )
     effective_wire_eff  = p_measured/ power_H2
     # print("P_meas", p_measured * 1e6, "µW")
     # print("P_predict", power_H2 * 1e6, "µW")

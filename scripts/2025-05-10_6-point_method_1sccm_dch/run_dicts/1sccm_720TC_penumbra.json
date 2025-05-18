@@ -1,0 +1,78 @@
+{
+    "out_dir_base": "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis\\scripts\\2025-05-10_6-point_method_1sccm_dch\\output\\",
+    "analysis_run_name": "1sccm_720TC_penumbra",
+    "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2023-04-21_1sccm_15A_TC_z-scan_jf_wire\\extractor_dict.json",
+    "z_list_unsorted": [
+        -11,
+        -10,
+        -9,
+        -8,
+        -7,
+        -6,
+        -5,
+        -4,
+        -3.5,
+        -3,
+        -2.5,
+        -2,
+        -1.5,
+        -1,
+        -0.5,
+        0,
+        0.5,
+        1,
+        1.5,
+        2,
+        2.5,
+        3,
+        3.5,
+        4,
+        4.5,
+        5,
+        5.5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        16,
+        18,
+        20
+    ],
+    "selection_indices": [
+        3,
+        100000,
+        1
+    ],
+    "fit_start": {
+        "l_eff": 4.1,
+        "theta_max": 0.45799795159722173,
+        "z0": 1.51,
+        "A": 0.07,
+        "P_0": -0.0,
+        "y0": 35.17,
+        "A_bound": [
+            0.007245,
+            0.2
+        ]
+    },
+    "fit_result": {
+        "l_eff": 4.312882721391804,
+        "A": 0.07728628160863141,
+        "z0": 1.510081902563302,
+        "P_0": 0.013724569625173502,
+        "theta_max": 0.45799795159722173,
+        "y0": 35.17
+    },
+    "fit_result_errors": {
+        "l_eff": 0.22406610861579165,
+        "A": 0.00199615123350836,
+        "z0": 0.12975560764626742,
+        "P_0": 0.011462648047854079,
+        "theta_max": null,
+        "y0": null
+    }
+}

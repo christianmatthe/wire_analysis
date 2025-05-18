@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import wire_analysis as wa
 from wire_analysis.utils import load_json_dict, load_extractor_dict_json
 from wire_analysis.accommodation_coefficient import (
-    calc_accomodation_coefficient, TC_to_T_Hack)
+    calc_accomodation_coefficient, TC_to_T_Hack, ac_from_Abg)
+from wire_analysis.beamshape import (calc_norm_factor)
 
 
 #plot Options
@@ -63,6 +64,8 @@ print(T_lst)
 ac_lst = []
 ac_err_lst = []
 ac_err_leff_lst = []
+ac_alt_lst = []
+ac_alt_lst2 = []
 for i,TC in enumerate(TC_lst):
     path = work_dir + f"1sccm_{TC}TC.json"
     rd = load_json_dict(path)
@@ -121,6 +124,28 @@ for i,TC in enumerate(TC_lst):
     # )[0]
     # ]
 
+    ac_alt = ac_from_Abg(
+        Abg = rd["fit_result"]["A"],
+        T = T_lst[i],
+        flow = 1 * 4.478 * 10**17 #sccm
+        )[0]
+    nf  = calc_norm_factor(l_eff = rd["fit_result"]["l_eff"])
+    eta_norm = 1.5 # Approimate effective normallization required for sim norm
+    d_wire = 5e-6 # wire thickness not included in P_fit (folded into A)
+    # given in m
+    y0 = 35.17e-3 # in m
+    # Transform from mm^2 to m^2 -> /1e6
+    #Integration was performed in mm -> need to include another factor of 1e-3
+    #ac_alt_lst.append(ac_alt* ((y0**2)/(nf*eta_norm*d_wire)))
+    ac_alt_lst2.append(ac_alt)
+    ac_alt_lst.append(ac_alt*1e-3 * ((y0**2)/(nf*d_wire)))
+    # based on which factors are included in 
+    # .beamshape integrateH_on_plane_1D_etaW
+    # but not in simplified  P_int_penumbra_3par 
+    # where these are instead subsumed in A
+    # It seems eta_w does not need to be included, becasue it is actually in 
+    # P_int_penumbra_3par 
+
 
     print(f"ac_err_leff", ac_err_leff)
     print(f"alphaE({T_lst[i]}K):", ac)
@@ -135,6 +160,9 @@ for i,TC in enumerate(TC_lst):
     ac_err_lst.append(ac_err)
     ac_err_leff_lst.append(ac_err_leff)
 print("ac_lst", ac_lst)
+print("ac_alt_lst", ac_alt_lst)
+print("ratios", np.array(ac_alt_lst) / np.array(ac_lst))
+print("ac_alt_lst2", ac_alt_lst2)
 print("ac_err_leff_lst", ac_err_leff_lst)
 print("ac_err_leff_lst[0]", ac_err_leff_lst[0])
 
