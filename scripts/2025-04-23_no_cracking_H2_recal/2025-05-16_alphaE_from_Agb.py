@@ -65,40 +65,10 @@ ac_lst = []
 ac_err_lst = []
 ac_err_leff_lst = []
 ac_alt_lst = []
-ac_alt_lst2 = []
+ac_T_err_lst = []
 for i,TC in enumerate(TC_lst):
     path = work_dir + f"1sccm_{TC}TC.json"
     rd = load_json_dict(path)
-    # extractor_dict = load_extractor_dict_json(rd["extractor_dict_path"])
-    # # THis is about to be the HACK iest extraction of beam center and out of
-    # # beam ever
-    # # p_measured = (0.28 - (-0.08)) * 1e-6 # Maximum power 
-    # # vs "out of beam" power
-    # p_measured = (np.max(extractor_dict["p_arr"])
-    #               - np.min(extractor_dict["p_arr"])) * 1e-6
-    # print(p_measured)
-    # ac = calc_accomodation_coefficient(
-    #     p_measured = p_measured,
-    #     T = T_lst[i],
-    #     l_eff = rd["fit_result"]["l_eff"],
-    #     theta_max = rd["fit_result"]["theta_max"],
-    #     y0 = rd["fit_result"]["y0"],
-    # )[0]
-    # ac_err_leff = [ac - calc_accomodation_coefficient(
-    #     p_measured = p_measured,
-    #     T = T_lst[i],
-    #     l_eff = rd["fit_result"]["l_eff"] - rd["fit_result_errors"]["l_eff"],
-    #     theta_max = rd["fit_result"]["theta_max"],
-    #     y0 = rd["fit_result"]["y0"],
-    # )[0], 
-    # ac - calc_accomodation_coefficient(
-    #     p_measured = p_measured,
-    #     T = T_lst[i],
-    #     l_eff = rd["fit_result"]["l_eff"] + rd["fit_result_errors"]["l_eff"],
-    #     theta_max = rd["fit_result"]["theta_max"],
-    #     y0 = rd["fit_result"]["y0"],
-    # )[0]
-    # ]
 
 
     ac = ac_from_Abg(
@@ -117,50 +87,42 @@ for i,TC in enumerate(TC_lst):
                 flow = 1 * 4.478 * 10**17 #sccm
                 )[0]
             ]
-    # nf  = calc_norm_factor(l_eff = rd["fit_result"]["l_eff"])
-    # eta_norm = 1.5 # Approimate effective normallization required for sim norm
-    # d_wire = 5e-6 # wire thickness not included in P_fit (folded into A)
-    # # given in m
-    # y0 = 35.17e-3 # in m
-    # # Transform from mm^2 to m^2 -> /1e6
-    # #Integration was performed in mm -> need to include another factor of 1e-3
-    # #ac_alt_lst.append(ac_alt* ((y0**2)/(nf*eta_norm*d_wire)))
-    # ac_alt_lst2.append(ac_alt)
-    # ac_alt_lst.append(ac_alt*1e-3 * ((y0**2)/(nf*d_wire)))
-    # # based on which factors are included in 
-    # # .beamshape integrateH_on_plane_1D_etaW
-    # # but not in simplified  P_int_penumbra_3par 
-    # # where these are instead subsumed in A
-    # # It seems eta_w does not need to be included, becasue it is actually in 
-    # # P_int_penumbra_3par 
 
-
-#     print(f"ac_err_leff", ac_err_leff)
-#     print(f"alphaE({T_lst[i]}K):", ac)
-#     # Propagate errors in p only
-#     p_max_err = extractor_dict["p_err_arr"][np.argmax(extractor_dict["p_arr"])]
-#     p_min_err = extractor_dict["p_err_arr"][np.argmin(extractor_dict["p_arr"])]
-#     p_err = np.sqrt(p_max_err**2 + p_min_err**2)* 1e-6
-#     p_rel_err = p_err/p_measured
-#     ac_err = p_rel_err * ac
-#     print(f"alphaE({T_lst[i]}K):", f"{ac:2.3f}" , "+-", f"{ac_err:2.3f}")
+    ac_Tp = ac_from_Abg(
+        Abg = rd["fit_result"]["A"],
+        T = T_lst[i]*1.02,
+        flow = 1 * 4.478 * 10**17 #sccm
+        )[0]
+    ac_Tm = ac_from_Abg(
+        Abg = rd["fit_result"]["A"],
+        T = T_lst[i]*0.98,
+        flow = 1 * 4.478 * 10**17 #sccm
+        )[0]
+    #WRONG
+    # ac_T_err = [ac_Tp - ac_from_Abg(
+    #             Abg = rd["fit_result"]["A"] - rd["fit_result_errors"]["A"],
+    #             T = T_lst[i]*0.98,
+    #             flow = 1 * 4.478 * 10**17 #sccm
+    #             )[0], 
+    #           ac_Tm - ac_from_Abg(
+    #             Abg = rd["fit_result"]["A"] + rd["fit_result_errors"]["A"],
+    #             T = T_lst[i]*1.02,
+    #             flow = 1 * 4.478 * 10**17 #sccm
+    #             )[0]
+    #         ]
     ac_lst.append(ac)
     ac_err_lst.append(ac_err)
+    ac_T_err_lst.append(ac_err)
 #     ac_err_leff_lst.append(ac_err_leff)
 print("ac_lst", ac_lst)
-# print("ac_alt_lst", ac_alt_lst)
-# print("ratios", np.array(ac_alt_lst) / np.array(ac_lst))
-# print("ac_alt_lst2", ac_alt_lst2)
-# print("ac_err_leff_lst", ac_err_leff_lst)
-# print("ac_err_leff_lst[0]", ac_err_leff_lst[0])
-
-# lst1 = ac_err_leff_lst
-# lst2 = ac_err_lst
 # comb_err = np.transpose(np.array([
 #             [np.abs(lst1[i][0] - lst2[i]),lst1[i][1] + lst2[i]]
 #              for i in range(len(lst2))]))
 comb_err = [ac_err_lst[i][0] for i in range(len(ac_err_lst))]
 print("comb_err", comb_err)
+T_errs = [i*0.02 for i in T_lst]
+ac_T_errs = [ac_err_lst[i][0] + (np.abs(ac -ac_Tp)) 
+             for i in range(len(ac_err_lst))]
 # TODO Max power to max power comparison at different  temperatures
 ############ Plot results with errors
 fig = plt.figure(0, figsize=(8,6.5))
@@ -169,16 +131,29 @@ ax1= plt.gca()
 #     label = r"p and $l_{\rm{eff}}$ errs",
 #     ms = 18, lw = 5,
 #     )
-ax1.errorbar(T_lst, ac_lst, yerr = comb_err, fmt = ".",
-    label = r"from Abg errors",
+
+ax1.errorbar(T_lst, ac_lst, yerr = ac_T_errs, xerr = T_errs, fmt = ".",
+    label = r"including  2\% $\Delta T$",
     ms = 18, lw = 5,
     )
+ax1.errorbar(T_lst, ac_lst, yerr = comb_err, fmt = ".",
+    label = r"propagating just $A_{bg}$ fit errors",
+    ms = 18, lw = 5,
+    )
+
 
 
 ax1.set_xlabel(r"T [K]")
 ax1.set_ylabel(r"$\alpha_E$")
 
-plt.legend(shadow=True)
+
+h, l = ax1.get_legend_handles_labels()
+select = [1,0]
+ax1.legend([h[i] for i in select], [l[i] for i in select],
+               #shadow = True,
+               )
+
+#plt.legend(shadow=True)
 plt.tight_layout()
 plt.grid(True)
 

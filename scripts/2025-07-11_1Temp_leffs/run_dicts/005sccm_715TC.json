@@ -1,7 +1,7 @@
 {
-    "out_dir_base": "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis\\scripts\\2025-05-10_0.2sccm_cut_data_dch\\output\\",
-    "analysis_run_name": "02sccm_715TC_penumbra",
-    "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2023-05-04_02sccm_15A_TC_z-scan_jf+hg_wire\\extractor_dict.json",
+    "out_dir_base": "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis\\scripts\\2025-07-11_1Temp_leffs\\output\\",
+    "analysis_run_name": "005sccm_715TC",
+    "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2023-05-16_005sccm_15A_TC_z-scan_jf+hg_wire\\extractor_dict.json",
     "z_list_unsorted": [
         -11,
         -6,
@@ -49,7 +49,7 @@
         1
     ],
     "fit_start": {
-        "l_eff": 6,
+        "l_eff": 4.1,
         "theta_max": 0.45799795159722173,
         "z0": 1.51,
         "A": 0.07,
@@ -61,21 +61,19 @@
         ]
     },
     "fit_result": {
-        "l_eff": 6.7480155069728545,
-        "A": 0.00685152017404644,
-        "z0": 1.6354701021013933,
-        "P_0": 0.05921847311691487,
+        "l_eff": 8.544330919837957,
+        "A": 0.03445076846886783,
+        "z0": 1.7346132152013078,
+        "P_0": 0.01272827355178313,
         "theta_max": 0.45799795159722173,
-        "y0": 35.17,
-        "d_ch": 7.065585660242213
+        "y0": 35.17
     },
     "fit_result_errors": {
-        "l_eff": 0.2954090616087957,
-        "A": 0.00016789267177275816,
-        "z0": 0.06168044688388803,
-        "P_0": 0.005745125912408113,
+        "l_eff": 0.5269732197361173,
+        "A": 0.0013687371036710933,
+        "z0": 0.0781680206566883,
+        "P_0": 0.003292530772061912,
         "theta_max": null,
-        "y0": null,
-        "d_ch": 0.13133834840366604
+        "y0": null
     }
 }

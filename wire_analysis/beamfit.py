@@ -546,7 +546,8 @@ class Beamfit():
     #################################################
 
     # save to run dict:
-    def save_fit_results(self, popt_abs, pcov_abs, fit_y0=False):
+    def save_fit_results(self, popt_abs, pcov_abs,
+                         fit_y0=False, fit_dch=False):
         rd = self.run_dict
         rd["fit_result"] = {}
         rd["fit_result_errors"] = {}
@@ -574,6 +575,11 @@ class Beamfit():
         if fit_y0:
             rd["fit_result"]["y0"] = popt_abs[4]
             rd["fit_result_errors"]["y_0"] = np.sqrt(pcov_abs[4,4])
+
+        #HACK
+        if fit_dch:
+            rd["fit_result"]["d_ch"] = popt_abs[4]
+            rd["fit_result_errors"]["d_ch"] = np.sqrt(pcov_abs[4,4])
 
         # Save to file
         self.save_json_run_dict(dict_path= self.run_dict_path, 
@@ -851,6 +857,7 @@ class Beamfit():
         r_c_0 = 0.4
         # ##### All parameters except theta_max
         if fit_y0:
+            fit_dch = False
             # P_int_fit = lambda z_space, l_eff, A , z0, P_0, d_ch, y0: (
             #     self.P_int_penumbra_3par(
             #         z_space, l_eff, theta_max, z0, A, P_0, d_ch, r_h_0, r_c_0,
@@ -874,6 +881,7 @@ class Beamfit():
                                          y_base +20])
                                 )
         else:
+            fit_dch = True
             P_int_fit = lambda z_space, l_eff, A , z0, P_0, d_ch: (
                 self.P_int_penumbra_3par(
                     z_space, l_eff, theta_max, z0, A, P_0, d_ch, r_h_0, r_c_0))
@@ -895,7 +903,9 @@ class Beamfit():
             print(f"parameter {i:.0f}: {p:.5f}"
                 +f"+-{np.sqrt(pcov_abs[i,i]):.5f}")
         # save to file
-        self.save_fit_results(popt_abs, pcov_abs, fit_y0=fit_y0)
+        #HAck to save either y_0 or d_chfit parameter
+        self.save_fit_results(popt_abs, pcov_abs, 
+                            fit_y0=fit_y0, fit_dch=fit_dch)
             
         #### plot
         z_space = np.linspace(-11,20,num=100)
