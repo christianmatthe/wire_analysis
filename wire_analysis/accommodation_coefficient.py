@@ -121,6 +121,19 @@ def ac_from_Abg(Abg, T,
                 )
     return ac
 
+def a_diss_from_A(A
+                    , flow = 1 * 4.478 * 10**17 #sccm
+                    , eta_rec = 1  # set to 1 for lower limit result
+                    ):
+    E_rec =7.1511 * 10**-19  # Joules
+        # https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.121.013001
+        # equivalent to 4.4634 eV
+    # print(A, flow, E_rec, eta_rec)
+    # print(type(A), type(flow))
+    a_diss = (A)/ (flow * E_rec * eta_rec)
+    return a_diss
+
+
 # TODO Function for trasnforming from PID setpoint to (estimated) temperature
 def TC_to_T_Hack(TC_val):
     # Simply digitzed the PID Thermocouple to T plot in discourse at 2 points

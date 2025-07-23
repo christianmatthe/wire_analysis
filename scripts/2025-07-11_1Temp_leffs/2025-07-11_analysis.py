@@ -74,9 +74,16 @@ def p_data_plot_dict(filename):
 #######
 # TC_lst = [200, 300, 390, 475]
 # indicator_list = ["715TC"]
-indicator_list = ["0002sccm", "001sccm", "005sccm", "02sccm", "1sccm",
-                   "10sccm"]
-TC_lst = [715, 715, 715, 715, 720, 720] 
+indicator_list = ["0002sccm",
+                   "001sccm", 
+                   "005sccm", "02sccm", "1sccm",
+                   "10sccm"
+                   ]
+TC_lst = [715,
+           715, 
+           715, 715, 720, 
+           720
+            ] 
 
 # indicator_list = [ #"1sccm",
 #                    "10sccm"]
@@ -360,12 +367,12 @@ for i, indicator  in enumerate(indicator_list):
 
 
 
-    print("custom penumbra fit wait ~??min")
-    beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
-                            p_arr=np.array(p_excess_lst).flatten()
-                            , p_err_arr = np.array(p_excess_err_lst).flatten()
-                    ,plotname="custom_fit_plot"
-                    )
+    # print("custom penumbra fit wait ~??min")
+    # beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
+    #                         p_arr=np.array(p_excess_lst).flatten()
+    #                         , p_err_arr = np.array(p_excess_err_lst).flatten()
+    #                 ,plotname="custom_fit_plot"
+    #                 )
 
 
 

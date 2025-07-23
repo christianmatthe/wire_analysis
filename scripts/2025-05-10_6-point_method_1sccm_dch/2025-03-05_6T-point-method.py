@@ -392,13 +392,13 @@ beamfit.save_json_run_dict()
 # #                         , p_err_arr = np.array(p_excess_err_lst).flatten()
 # #                         )
 ########################################
-print("dch and y0 fit wait ~??min")
-beamfit.fit_d_ch(z_arr=np.asarray(z_lst).flatten(),
-                        p_arr=np.array(p_excess_lst).flatten()
-                        , p_err_arr = np.array(p_excess_err_lst).flatten()
-                ,plotname="y0_fit_plot"+ "_"+ "-".join(H2_indicators),
-                fit_y0=True
-                )
+# print("dch and y0 fit wait ~??min")
+# beamfit.fit_d_ch(z_arr=np.asarray(z_lst).flatten(),
+#                         p_arr=np.array(p_excess_lst).flatten()
+#                         , p_err_arr = np.array(p_excess_err_lst).flatten()
+#                 ,plotname="y0_fit_plot"+ "_"+ "-".join(H2_indicators),
+#                 fit_y0=True
+#                 )
 
 print("dch fit wait ~??min")
 beamfit.fit_d_ch(z_arr=np.asarray(z_lst).flatten(),
