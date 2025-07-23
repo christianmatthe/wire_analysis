@@ -12,7 +12,7 @@ from wire_analysis.beamshape import (calc_norm_factor)
 #plot Options
 import matplotlib as mpl
 font = {#'family' : 'normal','weight' : 'bold',
-        'size'   : 16
+        'size'   : 20
         #,'serif':['Helvetica']
         }
 mpl.rc('font', **font)
@@ -240,7 +240,7 @@ ax1= plt.gca()
 
 # Wire det 1T analysis
 arrow_len = 8
-color_1T = "C7"
+color_1T = "C8"
 ax1.errorbar(flow_lst_1T, np.array(ad_1T_lst)*100,
               yerr = 100*np.abs(np.array(ad_1T_err_lst)).T, fmt = ",",
     label = r"wire det. T analysis",
@@ -380,19 +380,93 @@ def make_legend_arrow(legend, orig_handle,
                             head_length= head_length,
                             width = width,
                            )
-    
+
+    # rect_width = head_width
+    # rect_height = 2
+    # patch_line = mpatches.Rectangle((x, y), rect_width, rect_height, 
+    #                                 fill=False, 
+    #                                 #edgecolor='tab:blue', 
+    #                                 linestyle='-',
+    #                                 #transform=handlebox.get_transform()
+    #                                 )
+    # arrow = (p,patch_line)
     return p
+
 
 arrows = [mpatches.FancyArrow(0,0,0,0 # dummy placeholders
                               , fc='C0',
                                ec = "C0"),
+            mpatches.FancyArrow(0,0,0,0 # dummy placeholders
+                              , fc= color_1T,
+                               ec = color_1T)
 ]
 
-plt.legend(handles=arrows, 
-           labels=["lower limit"], 
+plt.legend(handles=arrows ,
+           labels=["lower limit", "lower limit 1T"], 
            handler_map={mpatches.FancyArrow : HandlerPatch(
                patch_func=make_legend_arrow),
                     })
+
+
+class MyArrowObject(object):
+    def __init__(
+        self,
+        patch_color = "C0"):
+        self.patch_color = patch_color
+    pass
+
+class MyArrowHandler(object):
+    def legend_artist(self, legend, orig_handle, fontsize, 
+                      handlebox):
+        patch_color = orig_handle.patch_color
+
+
+        x0, y0 = handlebox.xdescent, handlebox.ydescent
+        hb_width, hb_height = handlebox.width, handlebox.height
+        patch = mpatches.Rectangle([x0, y0], hb_width, hb_height, 
+                                   facecolor= "None",
+                                   edgecolor= "None", 
+                                   hatch='xx', lw=3,
+                                   transform=handlebox.get_transform())
+        handlebox.add_artist(patch)
+        ###
+        scale  = fontsize/16  # Original  was designed with fontize 16
+        head_width=10  *scale
+        head_length=10 / np.sqrt(2)  *scale
+        width = 5  *scale
+
+        # x = head_width/2
+        x = hb_width/2  *scale
+        dx = 0
+        dy = 10  *scale
+        # y = -( dy) /2
+        y  = -(head_length) /2  *scale
+
+        #patch_color =  self.patch_color
+
+        p = mpatches.FancyArrow(x, y, dx, dy,
+                                head_width = head_width,
+                                head_length= head_length,
+                                width = width,
+                                transform=handlebox.get_transform(),
+                                fc= patch_color,
+                                ec = patch_color,
+                            )
+        handlebox.add_artist(p)
+        h_rect = 3  *scale
+        p_rect = mpatches.Rectangle([x - width, y -1], 
+                                    width = head_width, height = h_rect, 
+                                    facecolor= patch_color,
+                                transform=handlebox.get_transform()
+                            )
+        handlebox.add_artist(p_rect)
+        return 
+
+plt.legend(handles = [MyArrowObject(patch_color  = "C0"),
+             MyArrowObject(patch_color  = color_1T)],
+            labels=["lower limit 3T", "lower limit 1T"],
+           handler_map={MyArrowObject: MyArrowHandler()})
+
 
 # plt.legend(shadow=True)
 plt.tight_layout()
