@@ -51,8 +51,9 @@ os.makedirs(out_dir, exist_ok=True)
 #     print(rd["fit_result"]["l_eff"])
 
 
-flow_lst = [1, 0.2, 0.05,
+flow_lst = [1, 0.2, 0.05
             ]
+flow_arr = np.array(flow_lst)
 
 flow_lst_1T = [10,
                1, 0.2, 0.05,
@@ -213,51 +214,74 @@ print("ad_errs_1T", ad_1T_err_lst)
 
 #Digitized data from Alecs plot
 #https://3.basecamp.com/3700981/buckets/3107037/uploads/8400184943
-flows_mainz = [0.002,1,20]
-ad_H =  [58.139534883720934, 31.007751937984494 ,11.886304909560726]
+flows_mainz = np.array([0.002,1,20])
+ad_H =  np.array([58.139534883720934, 31.007751937984494 ,11.886304909560726])
 ad_H_err = (np.array([67.95865633,36.69250646,20.93023256
 ]) - np.array(ad_H))
 
-ad_H2 = [65.11627907, 41.08527132, 29.97416021]
+ad_H2 = np.array([64, 39, 28])
+ad_H2_err = np.array([ 
+            np.abs(np.array([0, 100]) - ad_H2[0]),
+            np.abs(np.array([28.57142, 51.9480]) - ad_H2[1]),
+            np.abs(np.array([8.571428, 66.4935]) - ad_H2[2]),
+                    ]).T
 
+
+#Results of "c*T" refitting done by alec
+# tschersich_list = np.array(
+#     [[0.002136235,	65.11627907],
+#      [0.008851836,	46.51162791],
+#      [0.099400037,	34.36692506],
+#      [0.457797489,	12.14470284],
+#     ]).T
+# Read off from Tschersich 2000 fig 6 at 2200K
 tschersich_list = np.array(
-    [[0.002136235,	65.11627907],
-     [0.008851836,	46.51162791],
-     [0.099400037,	34.36692506],
-     [0.457797489,	12.14470284],
+    [[0.002136235,	60],
+     [0.008851836,	46.15],
+     [0.099400037,	30],
+     [0.457797489,	22.17],
     ]).T
+
 tschersich_flows = tschersich_list[0]
 tschersich_ads = tschersich_list[1]
 print("tschersich_flows , tschersich_ads")
 print(tschersich_flows , tschersich_ads)
 
 
+from matplotlib.legend_handler import HandlerPatch
+import matplotlib.patches as mpatches
+
+
+from matplotlib.patches import (FancyArrowPatch, FancyArrow, Arrow)
+from matplotlib.legend_handler import HandlerTuple
+from matplotlib.legend_handler import HandlerPatch
+
+include_1T = True
 ############ Plot results with errors
 fig = plt.figure(0, figsize=(8,6.5))
 ax1= plt.gca()
 
-
-
-# Wire det 1T analysis
 arrow_len = 8
-color_1T = "C8"
-ax1.errorbar(flow_lst_1T, np.array(ad_1T_lst)*100,
-              yerr = 100*np.abs(np.array(ad_1T_err_lst)).T, fmt = ",",
-    label = r"wire det. T analysis",
-    ms = 10, lw = 16,
-    # lolims = True,
-    capsize = 8,
-    color = color_1T
-    )
+if include_1T:
+    # Wire det 1T analysis
+    color_1T = "C8"
+    ax1.errorbar(flow_lst_1T, np.array(ad_1T_lst)*100,
+                yerr = 100*np.abs(np.array(ad_1T_err_lst)).T, fmt = ",",
+        label = r"wire det. T analysis",
+        ms = 10, lw = 16,
+        # lolims = True,
+        capsize = 8,
+        color = color_1T
+        )
 
-ax1.errorbar(flow_lst_1T, np.array(ad_1T_lst)*100, 
-             yerr = 100*np.abs(np.array(ad_1T_err_lst)).T + arrow_len,
-               fmt = ",",
-    ms = 16, lw = 6,
-    lolims = True,
-    capsize = 8,
-    color = color_1T
-    )
+    ax1.errorbar(flow_lst_1T, np.array(ad_1T_lst)*100, 
+                yerr = 100*np.abs(np.array(ad_1T_err_lst)).T + arrow_len,
+                fmt = ",",
+        ms = 16, lw = 6,
+        lolims = True,
+        capsize = 8,
+        color = color_1T
+        )
 #######
 ########### For Wire det data
 # ax1.errorbar(flow_lst, np.array(ac_lst)*100,
@@ -295,117 +319,47 @@ ax1.errorbar(flow_lst, np.array(ac_lst)*100,
 ####### tschersich:
 ax1.errorbar(tschersich_flows, tschersich_ads, yerr = 0, fmt = "v",
              color = "k",
-    label = r"Tschersich",
-    ms = 18, lw = 3,
+    label = r"Mass Spec., Tschersich",
+    ms = 15, lw = 3,
     ls = "-",
+    ecolor = "None",
     # lolims = True,
     # capsize = 6
     )
 # MAss spec data:
 ax1.errorbar(flows_mainz, ad_H, yerr = ad_H_err, fmt = "^",
              color = "C3", 
-    label = r"Mainz H",
-    ms = 18, lw = 3,
+    label = r"Mass Spec., Mainz,  $H$ production",
+    ms = 13, lw = 3,
+    elinewidth = 2, capthick = 2,
     ls = "-",
     # lolims = True,
     capsize = 6
     )
 
-ax1.errorbar(flows_mainz, ad_H2, yerr = 0, fmt = "o",
+ax1.errorbar(flows_mainz, ad_H2, yerr = ad_H2_err, fmt ="o",
             color = "C2", fillstyle= "none", mew = 3,
-    label = r"Mainz H2",
-    ms = 15, lw = 5,
+    label = r"Mass Spec., Mainz, $H_2$ reduction",
+    ms = 15, lw = 3,
+    # elinewidth = 0,
+    # ecolor = "None",
     # lolims = True,
-    # capsize = 6
+    capsize = 6
     )
 ##########
 
 
 
 
-ax1.set_xlabel(r"Hydrogen Flow [sccm]")
-ax1.set_ylabel(r"$\alpha_{\rm dissoc} [\%]$")
+ax1.set_xlabel(r"Hydrogen Flow $\Phi_{\rm in}$ [sccm]")
+ax1.set_ylabel(r"Dissociation Fraction $\alpha_{\rm dissoc} [\%]$")
 
 
-# h, l = ax1.get_legend_handles_labels()
-# select = [1,0]
-# ax1.legend([h[i] for i in select], [l[i] for i in select],
-#                #shadow = True,
-#                )
-from matplotlib.lines import Line2D
-# lower_cap = Line2D([0], [0], color='C0', marker=r'$\uparrow$',
-#                     linestyle='None',
-#                    markersize=12)
-
-
-from matplotlib.patches import (FancyArrowPatch, FancyArrow, Arrow)
-from matplotlib.legend_handler import HandlerTuple
-from matplotlib.legend_handler import HandlerPatch
 # Create the upward arrow using FancyArrow
 arrow = FancyArrow(0, 0, 0, 0.3,  # x, y, dx, dy (note: dy is positive for upward)
                    width=0.02, length_includes_head=True,
                    head_width=0.08, head_length=0.1,
                    color='green')
-
-# Add legend
-# plt.legend([legend_handle], ['Lower limit'],
-#                       handler_map={
-#                tuple: HandlerTuple(ndivide=None),
-#                FancyArrow: HandlerFancyArrow()
-#            }, loc='upper right')
-
-# plt.legend([arrow], ['Lower limit'],
-#         handler_map={FancyArrow : HandlerPatch(patch_func=make_legend_arrow),
-#            }, loc='upper right')
-
-from matplotlib.legend_handler import HandlerPatch
-import matplotlib.patches as mpatches
-
-def make_legend_arrow(legend, orig_handle,
-                      xdescent, ydescent,
-                      width, height, fontsize):
-
-    head_width=10
-    head_length=10 / np.sqrt(2)
-    width = 5
-
-    x = head_width/2
-    dx = 0
-    dy = 10
-    # y = -( dy) /2
-    y  = -(head_length) /2
-
-    p = mpatches.FancyArrow(x, y, dx, dy,
-                            head_width = head_width,
-                            head_length= head_length,
-                            width = width,
-                           )
-
-    # rect_width = head_width
-    # rect_height = 2
-    # patch_line = mpatches.Rectangle((x, y), rect_width, rect_height, 
-    #                                 fill=False, 
-    #                                 #edgecolor='tab:blue', 
-    #                                 linestyle='-',
-    #                                 #transform=handlebox.get_transform()
-    #                                 )
-    # arrow = (p,patch_line)
-    return p
-
-
-arrows = [mpatches.FancyArrow(0,0,0,0 # dummy placeholders
-                              , fc='C0',
-                               ec = "C0"),
-            mpatches.FancyArrow(0,0,0,0 # dummy placeholders
-                              , fc= color_1T,
-                               ec = color_1T)
-]
-
-plt.legend(handles=arrows ,
-           labels=["lower limit", "lower limit 1T"], 
-           handler_map={mpatches.FancyArrow : HandlerPatch(
-               patch_func=make_legend_arrow),
-                    })
 
 
 class MyArrowObject(object):
@@ -433,10 +387,10 @@ class MyArrowHandler(object):
         scale  = fontsize/16  # Original  was designed with fontize 16
         head_width=10  *scale
         head_length=10 / np.sqrt(2)  *scale
-        width = 5  *scale
+        width = 4  *scale
 
         # x = head_width/2
-        x = hb_width/2  *scale
+        x = hb_width/2  
         dx = 0
         dy = 10  *scale
         # y = -( dy) /2
@@ -454,7 +408,7 @@ class MyArrowHandler(object):
                             )
         handlebox.add_artist(p)
         h_rect = 3  *scale
-        p_rect = mpatches.Rectangle([x - width, y -1], 
+        p_rect = mpatches.Rectangle([x - head_width/2, y -1], 
                                     width = head_width, height = h_rect, 
                                     facecolor= patch_color,
                                 transform=handlebox.get_transform()
@@ -462,9 +416,29 @@ class MyArrowHandler(object):
         handlebox.add_artist(p_rect)
         return 
 
-plt.legend(handles = [MyArrowObject(patch_color  = "C0"),
-             MyArrowObject(patch_color  = color_1T)],
-            labels=["lower limit 3T", "lower limit 1T"],
+# plt.legend(handles = [MyArrowObject(patch_color  = "C0"),
+#              MyArrowObject(patch_color  = color_1T)],
+#             labels=["lower limit 3T", "lower limit 1T"],
+#            handler_map={MyArrowObject: MyArrowHandler()})
+handles, labels = plt.gca().get_legend_handles_labels()
+
+if include_1T:
+    handles = [MyArrowObject(patch_color  = "C0"),
+                MyArrowObject(patch_color  = color_1T),
+                handles[-3], handles[-2], handles[-1]]
+    labels = ["Wire Det., lower limit, 3-T-Point", 
+              "Wire Det., lower limit, 1-T-Point", 
+            labels[-3], labels[-2], labels[-1]]
+else:
+    handles = [MyArrowObject(patch_color  = "C0"),
+
+                handles[-3], handles[-2], handles[-1]]
+    labels = ["Wire Det., lower limit, 3-T-Point", 
+
+            labels[-3], labels[-2], labels[-1]]
+
+plt.legend(handles = handles,
+            labels= labels,
            handler_map={MyArrowObject: MyArrowHandler()})
 
 
@@ -483,7 +457,259 @@ ax1.grid(which="minor", color = "0.9")
 
 format_im = 'png' #'pdf' or png
 dpi = 300
-plt.savefig(out_dir + "alpha_diss_from_A"
+if include_1T:
+    plt.savefig(out_dir + "alpha_diss_from_A"
+                + '.{}'.format(format_im),
+                format=format_im, dpi=dpi)
+else:
+    plt.savefig(out_dir + "alpha_diss_from_A_base"
+            + '.{}'.format(format_im),
+            format=format_im, dpi=dpi)
+# plt.show()
+ax1.cla()
+fig.clf()
+plt.close()
+############################################################################
+
+
+# Plot total atom flux
+sccm = 4.478 * 10**17
+
+############ Plot results with errors
+fig = plt.figure(0, figsize=(8,6.5))
+ax1= plt.gca()
+
+flow_lst_1T = np.array(flow_lst_1T)
+
+# Wire det 1T analysis
+arrow_len = 8
+if include_1T:
+    color_1T = "C8"
+    ax1.errorbar(flow_lst_1T, np.array(ad_1T_lst) * 2*flow_lst_1T * sccm,
+                yerr = np.abs(np.array(ad_1T_err_lst)).T * 2*flow_lst_1T * sccm,
+                fmt = ",",
+        label = r"wire det. T analysis",
+        ms = 10, lw = 14,
+        # lolims = True,
+        capsize = 7,
+        color = color_1T
+        )
+
+    ax1.errorbar(flow_lst_1T,  np.array(ad_1T_lst) * 2*flow_lst_1T * sccm, 
+                yerr =  2*flow_lst_1T * sccm * (np.abs(np.array(ad_1T_err_lst)).T 
+                + np.array(ad_1T_lst) * 0.2),
+                # yerr =  2*flow_lst_1T * sccm * (1-np.array(ad_1T_lst)),
+                fmt = ",",
+        ms = 16, lw = 6,
+        lolims = True,
+        capsize = 7,
+        color = color_1T
+        )
+#######
+########### For Wire det data
+# ax1.errorbar(flow_lst, np.array(ac_lst)*100,
+#               yerr = 100*np.abs(np.array(ac_err_lst)).T, fmt = ",",
+#     label = r"propagating just $A$ fit errors",
+#     ms = 10, lw = 3,
+#     # lolims = True,
+#     capsize = 10
+#     )
+
+ax1.errorbar(flow_lst, np.array(ac_lst)* 2*flow_arr * sccm,
+              yerr = 2*flow_arr * sccm * np.abs(np.array(ac_err_lst)).T,
+                fmt = ",",
+    label = r"propagating just $A$ fit errors",
+    ms = 10, lw = 14,
+    # lolims = True,
+    capsize = 7
+    )
+# ax1.errorbar(flow_lst, np.array(ac_lst)*100, 
+#              yerr = 100*np.abs(np.array(ac_err_lst)).T, fmt = ",",
+#     ms = 18, lw = 5,
+#     lolims = True,
+#     #capsize = 6,
+#     color = "C0"
+#     )
+
+if include_1T:
+    ax1.errorbar(flow_lst,  np.array(ac_lst)* 2*flow_arr * sccm, 
+            yerr = 2*flow_arr * sccm * (
+                        np.abs(np.array(ac_err_lst)).T + np.array(ac_lst) * 0.2),
+            fmt = ",",
+        ms = 16, lw = 6,
+        lolims = True,
+        capsize = 7,
+        color = "C0"
+        )
+else:
+    ax1.errorbar(flow_lst,  np.array(ac_lst)* 2*flow_arr * sccm, 
+            yerr = 2*flow_arr * sccm * (
+                        np.abs(np.array(ac_err_lst)).T 
+                        + np.array(ac_lst) * 0.3),
+            fmt = ",",
+        ms = 16, lw = 6,
+        lolims = True,
+        capsize = 7,
+        color = "C0"
+        )
+##########
+
+#Plot 100% dissoc
+flows = np.linspace(0.001,30)
+ax1.plot(flows, 2*flows * sccm, "--", color = "C7",
+          label = "100\% Dissociation")
+ax1.set_xlim([0.001,30])
+########
+
+####### tschersich:
+ax1.errorbar(tschersich_flows, tschersich_ads *0.01*2* tschersich_flows * sccm,
+              yerr = 0, fmt = "v",
+             color = "k",
+    label = r"Mass Spec., Tschersich",
+    ms = 15, lw = 3,
+    ls = "-",
+    ecolor = "None",
+    # lolims = True,
+    # capsize = 6
+    )
+# MAss spec data:
+ax1.errorbar(flows_mainz, ad_H *0.01*2* flows_mainz * sccm,
+              yerr = ad_H_err *0.01*2* flows_mainz * sccm, fmt = "^",
+             color = "C3", 
+    label = r"Mass Spec., Mainz,  $H$ production",
+    ms = 11, lw = 3,
+    elinewidth = 2, capthick = 2,
+    ls = "-",
+    # lolims = True,
+    capsize = 6
+    )
+
+yerrs = 0.01*2* flows_mainz * sccm* (ad_H2_err) 
+ax1.errorbar(flows_mainz, ad_H2 *0.01*2* flows_mainz * sccm, 
+             yerr = yerrs, fmt ="o",
+            color = "C2", fillstyle= "none", mew = 3,
+    label = r"Mass Spec., Mainz, $H_2$ reduction",
+    ms = 13, lw = 3,
+    # elinewidth = 0,
+    # ecolor = "None",
+    # lolims = True,
+    capsize = 6
+    )
+#########
+
+
+ax1.set_xlabel(r"Hydrogen Flow $\Phi_{\rm in}$ [sccm]")
+ax1.set_ylabel(r"Atom flux $\Phi_{\rm at}$ [atoms / s]")
+
+
+
+class MyArrowObject(object):
+    def __init__(
+        self,
+        patch_color = "C0"):
+        self.patch_color = patch_color
+    pass
+
+class MyArrowHandler(object):
+    def legend_artist(self, legend, orig_handle, fontsize, 
+                      handlebox):
+        patch_color = orig_handle.patch_color
+
+
+        x0, y0 = handlebox.xdescent, handlebox.ydescent
+        hb_width, hb_height = handlebox.width, handlebox.height
+        patch = mpatches.Rectangle([x0, y0], hb_width, hb_height, 
+                                   facecolor= "None",
+                                   edgecolor= "None", 
+                                   hatch='xx', lw=3,
+                                   transform=handlebox.get_transform())
+        handlebox.add_artist(patch)
+        ###
+        scale  = fontsize/16  # Original  was designed with fontize 16
+        head_width=10  *scale
+        head_length=10 / np.sqrt(2)  *scale
+        width = 4  *scale
+
+        # x = head_width/2
+        x = hb_width/2  
+        dx = 0
+        dy = 10  *scale
+        # y = -( dy) /2
+        y  = -(head_length) /2  *scale
+
+        #patch_color =  self.patch_color
+
+        p = mpatches.FancyArrow(x, y, dx, dy,
+                                head_width = head_width,
+                                head_length= head_length,
+                                width = width,
+                                transform=handlebox.get_transform(),
+                                fc= patch_color,
+                                ec = patch_color,
+                            )
+        handlebox.add_artist(p)
+        h_rect = 3  *scale
+        p_rect = mpatches.Rectangle([x - head_width/2, y -1], 
+                                    width = head_width, height = h_rect, 
+                                    facecolor= patch_color,
+                                transform=handlebox.get_transform()
+                            )
+        handlebox.add_artist(p_rect)
+        return 
+
+# plt.legend(handles = [MyArrowObject(patch_color  = "C0"),
+#              MyArrowObject(patch_color  = color_1T)],
+#             labels=["lower limit 3T", "lower limit 1T"],
+#            handler_map={MyArrowObject: MyArrowHandler()})
+handles, labels = plt.gca().get_legend_handles_labels()
+
+
+if include_1T:
+    handles = [handles[0],
+               MyArrowObject(patch_color  = "C0"),
+                MyArrowObject(patch_color  = color_1T),
+                handles[-3], handles[-2], handles[-1]]
+    labels = [labels[0],"Wire Det., lower limit, 3-T-Point", 
+              "Wire Det., lower limit, 1-T-Point", 
+            labels[-3], labels[-2], labels[-1]]
+else:
+    handles = [handles[0],
+               MyArrowObject(patch_color  = "C0"),
+
+                handles[-3], handles[-2], handles[-1]]
+    labels = [labels[0], "Wire Det., lower limit, 3-T-Point", 
+
+            labels[-3], labels[-2], labels[-1]]
+
+
+plt.legend(handles = handles,
+            labels= labels,
+           handler_map={MyArrowObject: MyArrowHandler()},
+           fontsize = 16)
+
+
+# plt.legend(shadow=True)
+plt.tight_layout()
+#plt.grid(True)
+
+#ax1.set_ylim([0,100])
+from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
+ax1.yaxis.set_minor_locator(AutoMinorLocator())
+
+ax1.set_xscale('log')
+ax1.set_yscale('log')
+ax1.grid(which = "major", color = "0.5")
+ax1.grid(which="minor", color = "0.9")
+
+
+format_im = 'png' #'pdf' or png
+dpi = 300
+if include_1T:
+    plt.savefig(out_dir + "atom_flux_from_A"
+                + '.{}'.format(format_im),
+                format=format_im, dpi=dpi)
+else:
+    plt.savefig(out_dir + "atom_flux_from_A_base"
             + '.{}'.format(format_im),
             format=format_im, dpi=dpi)
 # plt.show()
