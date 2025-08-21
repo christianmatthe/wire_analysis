@@ -1,7 +1,7 @@
 {
     "out_dir_base": "C:\\Users\\Christian\\Documents\\StudiumPhD\\python\\wire_analysis\\scripts\\2025-04-23_no_cracking_H2_recal\\output\\",
-    "analysis_run_name": "1sccm_200TC",
-    "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2023-11-03_1sccm_200TC_z-scan_jf+hg_wire\\extractor_dict.json",
+    "analysis_run_name": "02sccm_390TC",
+    "extractor_dict_path": "C:/Users/Christian/Documents/StudiumPhD/python/Keysight-DMM-34461A/analysis/\\output/flow_on_off/2024-04-05_02sccm_390TC_z-scan_jf+hg_wire_cut\\extractor_dict.json",
     "z_list_unsorted": [
         -11,
         -6,
@@ -35,13 +35,7 @@
         10,
         15,
         17,
-        -7,
-        -2,
-        0.5,
-        3,
-        6,
-        11,
-        16
+        -7
     ],
     "selection_indices": [
         3,
@@ -53,29 +47,29 @@
         "theta_max": 1.57,
         "z0": 1.51,
         "A": 0.02415,
-        "P_0": 0.05,
+        "P_0": 0.0,
         "y0": 35.17,
         "A_bound": [
-            0.007245,
+            0.002,
             0.07245
         ]
     },
     "fit_result": {
-        "l_eff": 2.6999465357921935,
-        "A": 0.0031237103324758186,
-        "z0": 0.9896360245987099,
-        "P_0": 0.049436771636724504,
+        "l_eff": 2.0838608013432167,
+        "A": 0.0013275878995179001,
+        "z0": 2.22927884689114,
+        "P_0": 0.011803875597806001,
         "theta_max": 1.57,
         "y0": 35.17,
-        "d_ch": 6.218714208729874
+        "d_ch": 6.466018299230643
     },
     "fit_result_errors": {
-        "l_eff": 0.09168104234968197,
-        "A": 8.017744343878165e-05,
-        "z0": 0.09101062380243342,
-        "P_0": 0.001718940776637981,
+        "l_eff": 0.3106203776037869,
+        "A": 0.00019458079138982823,
+        "z0": 0.33774366551489776,
+        "P_0": 0.0040027067599936236,
         "theta_max": null,
         "y0": null,
-        "d_ch": 3.383223195434611e-05
+        "d_ch": 0.27593535778637546
     }
 }

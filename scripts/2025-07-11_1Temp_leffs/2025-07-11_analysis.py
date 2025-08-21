@@ -358,11 +358,19 @@ for i, indicator  in enumerate(indicator_list):
     #                 fit_y0=True
     #                 )
     
+    # print("dch fit wait ~??min")
+    # beamfit.fit_d_ch(z_arr=np.asarray(z_lst).flatten(),
+    #                         p_arr=np.array(p_excess_lst).flatten()
+    #                         , p_err_arr = np.array(p_excess_err_lst).flatten()
+    #                 ,plotname="dch_fit_plot"
+    #                 )
+
     print("dch fit wait ~??min")
     beamfit.fit_d_ch(z_arr=np.asarray(z_lst).flatten(),
                             p_arr=np.array(p_excess_lst).flatten()
                             , p_err_arr = np.array(p_excess_err_lst).flatten()
-                    ,plotname="dch_fit_plot"
+                    ,plotname="dch_fit_plot_squat",
+                    squatQ = True
                     )
 
 

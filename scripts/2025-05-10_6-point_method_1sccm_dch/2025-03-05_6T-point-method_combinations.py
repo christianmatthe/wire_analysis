@@ -320,11 +320,12 @@ set_indicator_powerset = set(indicator_powerset)
 #     # print("p_excess_lst", p_excess_lst)
 #     # print("p_arr=np.array(p_excess_lst)", np.array(p_excess_lst).flatten())
 
-#     print("custom penumbra fit wait ~??min")
-#     (popt, pcov) = beamfit.custom_fit(z_arr=np.asarray(z_lst).flatten(),
+
+#     print("dch fit wait ~??min")
+#     (popt, pcov) = beamfit.fit_d_ch(z_arr=np.asarray(z_lst).flatten(),
 #                             p_arr=np.array(p_excess_lst).flatten()
 #                             , p_err_arr = np.array(p_excess_err_lst).flatten()
-#                     ,plotname="custom_fit_plot"+ "_"+ "-".join(indicators)
+#                     ,plotname = "dch_fit_plot" + "_"+ "-".join(indicators)
 #                     )
 #     fit_res_dict[str(indicators)] = {}
 #     fit_res_dict[str(indicators)]["popt"] = popt.tolist()
@@ -453,11 +454,11 @@ plt.axvspan(l_eff - err, l_eff + err, label=r"All Sets, " + r"$l_{\rm eff} = $"
         + f"{l_eff:.2f}" + r"$\pm$" + f"{err:.2f}", 
         color = "C0", alpha = 0.5, ls = "--")   
 
-# l_eff = fit_res_dict["('390TC', '0A')"]["popt"][0]
-# err = np.sqrt(
-#     fit_res_dict["('390TC', '0A')"]["pcov"][0][0])
-l_eff = 4.20
-err = 0.22
+l_eff = fit_res_dict["('390TC', '0A')"]["popt"][0]
+err = np.sqrt(
+    fit_res_dict["('390TC', '0A')"]["pcov"][0][0])
+# l_eff = 4.20
+# err = 0.22
 
 plt.axvline(l_eff, 
         #     label=r"720TC-390TC-0A " + r"$l_{\rm eff} = $"
@@ -473,6 +474,16 @@ plt.ylabel('Count')
 plt.xlabel(r'$l_{\rm eff}$')
 plt.bar(bin_centers, entries, align='center',width=bin_width,edgecolor='k',
         color = "C1", label  = "Binned Data")
+
+plt.axvline(mean, 
+        #     label=r"720TC-390TC-0A " + r"$l_{\rm eff} = $"
+        # + f"{l_eff:.2f}", 
+        color = "C1", alpha = 1, ls = "--", lw = 3)    
+plt.axvspan(mean - std, mean + std, 
+            #label=r"2211K-1277K-298K,  " + r"$l_{\rm eff} = $"
+        #+ f"{l_eff:.2f}" + r"$\pm$" + f"{err:.2f}", 
+        color = "C1", alpha = 0.5, ls = "--")
+
 plt.legend(fontsize = 13, shadow = True)
 plt.tight_layout()
 

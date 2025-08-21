@@ -805,7 +805,8 @@ class Beamfit():
     
     def fit_d_ch(self,z_arr, p_arr, p_err_arr, 
                         plotname = "fit_d_ch_plot",
-                        fit_y0 = False
+                        fit_y0 = False,
+                        squatQ = False
                      ):
         # Crude function for fitting a dataset not equal to the run dict data
         # file. I suppose that really should not be the intended use case. 
@@ -983,7 +984,8 @@ class Beamfit():
             theta_max=theta_max/self.degree,
             l_eff_str = None,
                      plotname = plotname,
-                     table_string = table)
+                     table_string = table,
+                     squatQ = True)
         return (popt_abs, pcov_abs)
     
     def fit_3par_penumbra(self,z_arr, p_arr, p_err_arr, 
@@ -1081,15 +1083,20 @@ class Beamfit():
             # Name plot
             plotname = "default",
             table_string = None,
+            squatQ = False
              ):
         nParams = 5
         dof = len(P_arr) - nParams
         #chi2 = np.sum((P_arr - P_arr_eye)**2 / P_err_arr**2)
         chi2_red = np.sum((P_arr - P_arr_eye)**2 / P_err_arr**2) / dof
-
-        fig = plt.figure(0, figsize=(8,6.5), dpi =300)
+        
+        if squatQ:
+            fig = plt.figure(0, figsize=(8,5.5), dpi =300)
+            gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[4, 1])
+        else:
+            fig = plt.figure(0, figsize=(8,6.5), dpi =300)
+            gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[3, 1])
         ax1=plt.gca()
-        gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[3, 1]) 
         gs.update(#wspace=0.05
                 hspace = 0.005
             )
@@ -1221,7 +1228,7 @@ class Beamfit():
         dpi = 300
         plt.savefig(self.out_dir + plotname
                     + '.{}'.format(format_im),
-                    format=format_im, dpi=dpi)
+                    format=format_im, dpi=dpi, bbox_inches="tight")
         # plt.show()
         # Reintroduce diiagnostics plot with chi sqared:
         ax1.errorbar(z_arr, P_arr,yerr = P_err_arr, fmt = ".",
