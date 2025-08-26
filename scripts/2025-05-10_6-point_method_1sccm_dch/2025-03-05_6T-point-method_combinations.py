@@ -19,6 +19,9 @@ from wire_analysis.flow_on_off_cycle_analysis import (
 
 #plot Options
 import matplotlib as mpl
+#Restore defaults:
+mpl.rcdefaults()
+#make changes
 font = {#'family' : 'normal','weight' : 'bold',
         'size'   : 16
         #,'serif':['Helvetica']
@@ -372,9 +375,9 @@ print("w_mean = ", w_mean)
 print("w_std = ", w_std)
 print("std_of_mean =", std_of_mean)
 
-print(sorted(l_eff_list)[0:-1])
-print("cut span mean= ", np.sum(sorted(l_eff_list)[0:-1]) / n)
-print(sorted(l_eff_list))
+# print(sorted(l_eff_list)[0:-1])
+# print("cut span mean= ", np.sum(sorted(l_eff_list)[0:-1]) / n)
+# print(sorted(l_eff_list))
 
 
 # # With just length 2
@@ -423,6 +426,7 @@ title='Histogram'
 hist_range = []
 
 fig = plt.figure(0, figsize=(8,6.5), dpi =300)
+ax1= plt.gca()
 if hist_range == []:
     hist_range = np.array([np.min(dat), np.max(dat)])
 bin_width =  (hist_range[0]-hist_range[-1])/nBins
@@ -445,12 +449,12 @@ for i in range(0,nBins):
 l_eff = fit_res_dict["('475TC', '390TC', '300TC', '200TC', '0A')"]["popt"][0]
 err = np.sqrt(
     fit_res_dict["('475TC', '390TC', '300TC', '200TC', '0A')"]["pcov"][0][0])
-plt.axvline(l_eff, 
+ax1.axvline(l_eff, 
         #     label=r"All Sets " + r"$l_{\rm eff} = $"
         # + f"{l_eff:.2f}", 
         color = "C0", alpha = 1, ls = "--", lw  = 3)   
 
-plt.axvspan(l_eff - err, l_eff + err, label=r"All Sets, " + r"$l_{\rm eff} = $"
+ax1.axvspan(l_eff - err, l_eff + err, label=r"6-T-P: All Sets, " + r"$l_{\rm eff} = $"
         + f"{l_eff:.2f}" + r"$\pm$" + f"{err:.2f}", 
         color = "C0", alpha = 0.5, ls = "--")   
 
@@ -460,37 +464,126 @@ err = np.sqrt(
 # l_eff = 4.20
 # err = 0.22
 
-plt.axvline(l_eff, 
+ax1.axvline(l_eff, 
         #     label=r"720TC-390TC-0A " + r"$l_{\rm eff} = $"
         # + f"{l_eff:.2f}", 
         color = "C2", alpha = 1, ls = "--", lw = 3)    
-plt.axvspan(l_eff - err, l_eff + err, 
-            label=r"2211K-1277K-298K,  " + r"$l_{\rm eff} = $"
+ax1.axvspan(l_eff - err, l_eff + err, 
+            label=r"3-T-P: 2211K-1277K-298K,  " + r"$l_{\rm eff} = $"
         + f"{l_eff:.2f}" + r"$\pm$" + f"{err:.2f}", 
         color = "C2", alpha = 0.5, ls = "--")
 
-#plt.title(title)
+
 plt.ylabel('Count')
 plt.xlabel(r'$l_{\rm eff}$')
-plt.bar(bin_centers, entries, align='center',width=bin_width,edgecolor='k',
-        color = "C1", label  = "Binned Data")
+ax1.bar(bin_centers, entries, align='center',width=bin_width,edgecolor='k',
+        color = "C1", 
+        label  = f"(3 to 6)-T-P: Binned Data, $\mu\pm \sigma ={mean:.2f} \pm {std:.2f}$")
 
-plt.axvline(mean, 
-        #     label=r"720TC-390TC-0A " + r"$l_{\rm eff} = $"
-        # + f"{l_eff:.2f}", 
-        color = "C1", alpha = 1, ls = "--", lw = 3)    
-plt.axvspan(mean - std, mean + std, 
-            #label=r"2211K-1277K-298K,  " + r"$l_{\rm eff} = $"
-        #+ f"{l_eff:.2f}" + r"$\pm$" + f"{err:.2f}", 
-        color = "C1", alpha = 0.5, ls = "--")
+# import matplotlib.patheffects as pe
+# ax1.axvline(mean, 
+#         #     label=r"720TC-390TC-0A " + r"$l_{\rm eff} = $"
+#         # + f"{l_eff:.2f}", 
+#         color = "C1", alpha = 1, ls = "--", lw = 2, 
+#         path_effects=[pe.Stroke(linewidth=3, foreground='k'), pe.Normal()])    
+# ax1.axvspan(mean - std, mean + std, 
+#             #label=r"2211K-1277K-298K,  " + r"$l_{\rm eff} = $"
+#         #+ f"{l_eff:.2f}" + r"$\pm$" + f"{err:.2f}", 
+#         color = "C1", alpha = 0.2, ls = "--")
 
-plt.legend(fontsize = 13, shadow = True)
-plt.tight_layout()
+
+import matplotlib.patches as mpatches
+from  matplotlib.lines import Line2D
+#Legend patches:
+class MyPatch(object):
+    def __init__(
+        self,
+        patch_color = "C0"):
+        self.patch_color = patch_color
+    pass
+
+class MyPatchHandler(object):
+    def legend_artist(self, legend, orig_handle, fontsize, 
+                      handlebox):
+        patch_color = orig_handle.patch_color
+
+
+        x0, y0 = handlebox.xdescent, handlebox.ydescent
+        hb_width, hb_height = handlebox.width, handlebox.height
+
+        # Scale soemhwat larger:
+        scale = .5
+        y0 = y0 - (scale/2)* hb_height
+        hb_height = hb_height + scale* hb_height
+
+        patch = mpatches.Rectangle([x0, y0], hb_width, hb_height, 
+                                   facecolor= patch_color,
+                                   alpha = 0.5,
+                                   edgecolor= patch_color, 
+                                   lw=1, linestyle = "--",
+                                   transform=handlebox.get_transform())
+        handlebox.add_artist(patch)
+        ### Add central line # hacked via rectangle
+        # patch = mpatches.Rectangle([x0 + hb_width/2, y0 - hb_height/2], 
+        #                            0.1, hb_height, 
+        #                            facecolor= "none",
+        #                            edgecolor= "r", 
+        #                            lw=1, linestyle = "--",
+        #                            transform=handlebox.get_transform())
+        # handlebox.add_artist(patch)
+        line_lw = 0.9
+        patch = Line2D(xdata = [x0 + hb_width/2, x0 + hb_width/2], 
+                       ydata = [y0 , y0 + hb_height],
+                            color= patch_color, 
+                            alpha  = 1,
+                            lw= line_lw, linestyle = "--",
+                            transform=handlebox.get_transform())
+        handlebox.add_artist(patch)
+        # HACK Dither to make wider line
+        for i in range(1,5):
+            dith  = 0.25 * i
+            patch = Line2D(xdata = [x0 + hb_width/2 +dith,
+                                     x0 + hb_width/2 + dith], 
+                    ydata = [y0 , y0 + hb_height],
+                        color= patch_color, 
+                        alpha  = 1,
+                        lw=line_lw, linestyle = "--",
+                        transform=handlebox.get_transform())
+            handlebox.add_artist(patch)
+            patch = Line2D(xdata = [x0 + hb_width/2 -dith, 
+                                    x0 + hb_width/2 - dith], 
+                    ydata = [y0 , y0 + hb_height],
+                        color= patch_color, 
+                        alpha  = 1,
+                        lw=line_lw, linestyle = "--",
+                        transform=handlebox.get_transform())
+            handlebox.add_artist(patch)
+
+        return 
+
+
+handles, labels = plt.gca().get_legend_handles_labels()
+
+handles = [MyPatch(patch_color  = "C0"),
+           MyPatch(patch_color  = "C2"),
+           handles[2]]
+labels = labels
+
+ylims = ax1.get_ylim()
+print("ylims", ylims)
+ax1.set_ylim([ylims[0], ylims[1]+1.5])
+
+plt.legend(handles = handles,
+            labels= labels,
+           handler_map={MyPatch: MyPatchHandler()},
+           fontsize = 11, shadow = True)
+# plt.legend(fontsize = 13, shadow = True)
+
 
 format_im = 'png' #'pdf' or png
 dpi = 300
 plt.savefig(out_dir + title
         + '.{}'.format(format_im),
-        format=format_im, dpi=dpi)
+        format=format_im, dpi=dpi, bbox_inches = "tight")
 plt.close()
 # return bin_centers, entries, bin_width
