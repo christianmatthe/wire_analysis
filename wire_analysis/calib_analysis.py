@@ -601,7 +601,7 @@ def fit_base_R(avg_dict, plotname, plot_dir = plot_dir, inset = False):
              xerr = P_err(i_arr_off, i_err_off, v_arr, v_err),
              fmt = ".",
              # markersize=1,
-             label = f"data, offset {1000*offset:.4f} [µA]")
+             label = "data, " + r"$I_{\rm off}$=" + f"{1000*offset:.4f} [µA]")
 
     # Plot Fit
     xdata=p_arr

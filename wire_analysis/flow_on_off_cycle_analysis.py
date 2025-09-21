@@ -24,6 +24,10 @@ from .Voltage_base_analysis import (load_data, save_data, select_date_indices,
 
 #plot Options
 import matplotlib as mpl
+#Restore defaults:
+mpl.rcdefaults()
+mpl.rcParams['text.usetex'] = False
+#make changes
 font = {#'family' : 'normal','weight' : 'bold',
         'size'   : 16
         #,'serif':['Helvetica']
@@ -524,6 +528,46 @@ def power_to_temperature(P):
     return T
 
 
+# Define Pt1000 temperature scale
+#from https://www.kongsberg.com/globalassets/maritime/km-products/
+# product-documents/tsiec751_ce.pdf
+def T_to_R(T):
+    """
+    T in °C
+    """
+    T_list = np.linspace(-200,850, num = 1051)
+    A = 3.9083e-3
+    B = -5.775e-7
+    C = -4.183e-12
+    R_0 = 1000.0
+    def fun(T):
+        if T >= 0:
+            R_T = R_0 * (1 + A*T + B*T**2)
+        if T < 0:
+            R_T = R_0 * (1 + A*T + B*T**2 + C*(T - 100)* T**3) 
+        return R_T
+    T_list = np.linspace(-200,850, num = 1051)
+    R_list = np.vectorize(fun)(T_list)
+    f_int = interp1d(T_list,
+                    R_list
+                    ,
+                    kind = "cubic"
+                    ,fill_value="extrapolate"
+                    )
+    return f_int(T)
+
+def R_to_T(R):
+    T_list = np.linspace(-200,850, num = 1051)
+    R_list = np.vectorize(T_to_R)(T_list)
+    f_int = interp1d(R_list,
+                    T_list
+                    ,
+                    kind = "cubic"
+                    ,fill_value="extrapolate"
+                    )
+    return f_int(R)
+
+
 # TODO GOAL Implement piecewise background fitting of equilibrated sections in
 # "Off" state
 # Then Fit offset to "ON" state 
@@ -558,14 +602,16 @@ Parameters
                  initial_state = 0,
                  front_crop = dt.timedelta(minutes = 2),
                  rear_crop = dt.timedelta(minutes  =0, seconds  =30),
-                 denoise = False
+                 denoise = False,
+                 subtract_Tpt = False,
                  ):
 
         #no defaults
-        self.data_dict = data_dict
+        self.data_dict = data_dict.copy()
         self.start_date = start_date
         self.end_date = end_date
         self.run_name = run_name
+
 
         # with  defaults
         self.time_interval = time_interval
@@ -581,7 +627,8 @@ Parameters
         #             + "data/")
         os.makedirs(self.plot_dir, exist_ok=True)
 
-
+        # Subtract background T:
+        self.subtract_Tpt = subtract_Tpt
 
         # Constants 
         self.state_names = ["off", "on"]
@@ -675,7 +722,6 @@ Parameters
         save_data(dataname, self.data_dict)
 
 
-
     def slice_dict(self):
         """"
         Slice data by time intervals and sort into on and off states 
@@ -699,23 +745,56 @@ Parameters
                                                 interval_end)
             v_series = self.data_dict["voltage"][start:end] 
             dates = self.data_dict["dates"][start:end]
+
             # move to German timezone
             dates = np.array([
                     date.astimezone(dt.timezone(
                         dt.timedelta(hours=self.utc_offset)))
                     for date in dates])
-            # build sclided dict in 2 separate pieces, one "OFF" , one "ON"
-            # Is this even a good idea?
-            # sliced_dict[self.state_names[(n + initial_state)%2]][n//2] = {
-            #     "voltage":v_series, "dates":dates
 
-            # }
-            #just put slices in a list?
-            # sliced_dict.append({"voltage":v_series, "dates":dates,
-            #  "state": self.state_names[(n + initial_state)%2] })
-
-            sliced_dict[n] = {"voltage":v_series, "dates":dates,
-             "state": self.state_names[(n + initial_state)%2] }
+            # Add R_pt_1000 if available
+            try:
+                r_pt_series = self.data_dict["R_Pt_1000"][start:end]
+                sliced_dict[n] = {"voltage":v_series, "dates":dates,
+                    "state": self.state_names[(n + initial_state)%2],
+                    "R_Pt_1000": r_pt_series}
+                if self.subtract_Tpt == True:
+                    if n == 0:
+                        T_ref = np.median(R_to_T(sliced_dict[0]["R_Pt_1000"]))
+                    Rs = sliced_dict[n]["R_Pt_1000"]
+                    Ts_pt = R_to_T(Rs)
+                    #MMega HACK onlyworks for i_meas  = 1 mA, 
+                    # treating vs as Rs
+                    a_T_coeff= 5.1 * 10**-3 
+                    # reasonalbe for wire temp around 80°C
+                    T_fudge  = 0.77
+                    vs  = sliced_dict[n]["voltage"] * (
+                                1 + a_T_coeff * T_fudge* (
+                                    T_ref - Ts_pt))
+                    sliced_dict[n]["voltage"] = vs
+            except:
+                if self.subtract_Tpt == True:
+                    Exception("Failed to add R_pt", "n = ", n)
+                else:
+                    sliced_dict[n] = {"voltage":v_series, "dates":dates,
+                    "state": self.state_names[(n + initial_state)%2] }
+        # #HACK subtract local T_pt delta
+        # if self.subtract_Tpt == True:
+        #     # Can just use an arbitrary reference form the 2nd slice
+        #     T_ref = np.average(R_to_T(sliced_dict[1]["R_Pt_1000"]))
+        #     for n in range(n_slices):
+        #         slice = sliced_dict[n]
+        #         Rs = slice["R_Pt_1000"]
+        #         Ts_pt = R_to_T(Rs)
+        #         #MMega HACK onlyworks for i_meas  = 1 mA, 
+        #         # treating vs as Rs
+        #         a_T_coeff= 5.1 * 10**-3 
+        #         # reasonalbe for wire temp around 80°C
+        #         T_fudge  = 1
+        #         vs  = slice["voltage"] * (
+        #                     1 + a_T_coeff * T_fudge* (
+        #                         T_ref - Ts_pt))
+        #         sliced_dict[n]["voltage"] = vs
         
         #pass to object
         self.sliced_dict = sliced_dict
@@ -741,6 +820,11 @@ Parameters
         # replace changed entries
         crop["voltage"] = v_series
         crop["dates"] = dates
+        try:
+            Rs = slice["R_Pt_1000"][start:end]
+            crop["R_Pt_1000"] = Rs
+        except:
+            pass
         return crop
 
     def crop_dict(self,
@@ -1193,7 +1277,7 @@ Parameters
             if key == 0:
                 w_mean = self.fit_results[method]["w_mean"]
                 w_std = self.fit_results[method]["w_std"]
-                label = ("fit_data" + f", offset w_mean: {w_mean:.3e}" 
+                label = ("fit data" + f", offset w\_mean: {w_mean:.3e}" 
                         + r"$\pm$" + f"{w_std:.1e}")
             else:
                 label = "_nolegend_"
@@ -1223,8 +1307,8 @@ Parameters
                         label = (f"c0: {fit['popt'][0]:.1e},"
                             + f"c1: {fit['popt'][1]:.1e},"
                             + f"A0: {fit['popt'][2]:.1e},"
-                            + f"tau_A: {fit['popt'][3]:.1e},"
-                            + f"B_offset: {fit['popt'][-1]:.3e}")
+                            + f"tau\_A: {fit['popt'][3]:.1e},"
+                            + f"B\_offset: {fit['popt'][-1]:.3e}")
                     )
                 # Plot virtual background
                 if plot_v_eq == True:
@@ -1278,7 +1362,7 @@ Parameters
                             + f"A1: {fit['popt'][3]:.1e},"
                             + f"tau_A: {fit['popt'][4]:.1e},"
                             + f"tau_B: {fit['popt'][5]:.1e},"
-                            + f"B_offset: {fit['popt'][-1]:.3e}")
+                            + f"B\_offset: {fit['popt'][-1]:.3e}")
                     )
                 # Plot virtual background
                 if plot_v_eq == True:
@@ -1326,7 +1410,7 @@ Parameters
                         label = (f"c0: {fit['popt'][0]:.1e},"
                             + f"c1: {fit['popt'][1]:.1e},"
                             + f"c2: {fit['popt'][2]:.1e},"
-                            + f"B_offset: {fit['popt'][3]:.3e}")
+                            + f"B\_offset: {fit['popt'][3]:.3e}")
                     )
             plt.legend(shadow=True,loc='lower left', bbox_to_anchor=(0, 1),
                   fontsize=14)
@@ -1346,7 +1430,7 @@ Parameters
                         color = f"C{i_c}",
                         label = (f"c0: {fit['popt'][0]:.1e},"
                             + f"c1: {fit['popt'][1]:.1e},"
-                            + f"B_offset: {fit['popt'][2]:.3e}")
+                            + f"B\_offset: {fit['popt'][2]:.3e}")
                     )
             plt.legend(shadow=True,loc='lower left', bbox_to_anchor=(0, 1))
 
@@ -1474,6 +1558,151 @@ Parameters
             plt.savefig(plot_path + '.{}'.format(format_im),
                         format=format_im, dpi=dpi)
         ax1.cla()
+        fig.clf()
+        return
+    
+    def plot_all_ABA_fit_thesis(self,
+                        plot_path,
+                        method = "quad",
+                        plot_v_eq = False,
+                        **kwargs
+                            ):
+
+
+        fig = plt.figure(0, figsize=(8,7.5), dpi =300)
+        gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[3, 1])
+
+        ax1=plt.gca()
+        gs.update(#wspace=0.05
+                hspace = 0.005
+            )
+
+        ax1 = plt.subplot(gs[0])
+        ax2 = plt.subplot(gs[1])
+        # plot data
+        for key,slice in self.sliced_dict.items():
+            if key == 0:
+                label = "data"
+                date0 = slice["dates"][0]
+            else:
+                label = "_nolegend_"
+            time_diff_min = [(slice["dates"][i] - date0).total_seconds()/60 
+                    for i in range(len(slice["dates"]))]
+            ax1.plot(time_diff_min,slice["voltage"]*1000,".",
+                markersize=8,
+                color = "C0",
+                label = label)
+        
+        data_ylims = ax1.get_ylim()
+            
+        # plot cropped data
+        for key,slice in self.cropped_dict.items():
+            if key == 0:
+                w_mean = self.fit_results[method]["w_mean"]
+                w_std = self.fit_results[method]["w_std"]
+                label = ("fit data, Average:" + "\n"
+                         + r"$\Delta R = $ "
+                         +  f"{w_mean* 1e6:.1f}" 
+                         + r"$\pm$" + f"{w_std * 1e6:.1f}" 
+                         + r"m$\Omega$"
+                        )
+            else:
+                label = "_nolegend_"
+            # ax1.plot(slice["dates"],slice["voltage"]*1000,".",
+            #     markersize=8,
+            #     color = "C1",
+            #     label = label)
+            time_diff_min = [(slice["dates"][i] - date0).total_seconds()/60 
+                             for i in range(len(slice["dates"]))]
+            ax1.plot(time_diff_min,slice["voltage"]*1000,".",
+                markersize=8,
+                color = "C1",
+                label = label)
+            
+
+        # plot fits
+        #color iterator
+        i_c = 1
+
+        if method == "quad":
+            for key,fit in self.quad_ABA_fit_dict.items():
+                i_c +=1
+                # dates = (fit["start_date"]
+                #         + np.array(
+                #         [dt.timedelta(seconds = t) for t in fit["t_space"]]) 
+                #         )
+                dates = (fit["start_date"]
+                        + np.array(
+                        [dt.timedelta(seconds = t) for t in fit["t_space"]]) 
+                        )
+                time_diff_min = [(dates[i] - date0).total_seconds()/60 
+                    for i in range(len(dates))]
+                v_series = fit["fit_series"]
+                ax1.plot(time_diff_min,v_series*1000,
+                        "-",
+                        #markersize=4,
+                        linewidth=2,
+                        alpha=1,
+                        color = f"C{i_c}",
+                        label = (f"{i_c - 1}: "
+                                r"$\Delta R$= "
+                                 + f"{fit['popt'][3] * 1e6:.1f}"
+                                 + r"m$\Omega$")
+                    )
+            ax1.legend(shadow=True,loc='lower left', bbox_to_anchor=(0, 1),
+                  fontsize=14,
+                  ncol = 2
+                  )
+            
+        #Ax 2 with Pt1000 data        
+        for key,slice in self.sliced_dict.items():
+            if key == 0:
+                label = "Pt 1000"
+                date0 = slice["dates"][0]
+            else:
+                label = "_nolegend_"
+            time_diff_min = [(slice["dates"][i] - date0).total_seconds()/60 
+                    for i in range(len(slice["dates"]))]
+            ax2.plot(time_diff_min,slice["R_Pt_1000"],".",
+                markersize=3,
+                color = "C0",
+                label = label)
+        
+        ax2.set_ylabel(r"$R_{Pt1000}$[$\Omega$]")
+        ax2.legend(shadow = True, fontsize  =12)
+
+        
+        plt.xticks(rotation = 45)
+
+        #set x tick spacing to 5 mins
+        tick_spacing = 5
+        import matplotlib.ticker as ticker
+        ax1.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        ax2.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+
+        ax1.set_xlabel(r"Time [min]")
+        ax2.set_xlabel(r"Time [min]")
+        ax1.set_ylabel(r"Resistance [$\Omega$]")
+
+        ax1.grid(True)
+        ax2.grid(True)
+        format_im = 'png' #'pdf' or png
+        dpi = 300
+        if plot_v_eq == True:
+            plt.savefig(plot_path + "_veq" + '.{}'.format(format_im),
+                        format=format_im, dpi=dpi, bbox_inches = "tight")
+        try:
+            if self.subtract_Tpt == True:
+                plt.savefig(plot_path + "_sTpt" + '.{}'.format(format_im),
+                            format=format_im, dpi=dpi, bbox_inches = "tight")
+        except:
+            pass
+        else:
+            plt.savefig(plot_path + '.{}'.format(format_im),
+                        format=format_im, dpi=dpi, bbox_inches = "tight")
+        ax1.cla()
+        ax2.cla()
+        fig.clf()
         return
 
     def plot_all_quad_ABA_fit(self,
@@ -1534,6 +1763,7 @@ Parameters
 
         return (mean, std, w_mean, w_std, std_of_mean,
                 w_mean_clipped,w_std_clipped)
+    
 
     def write_means_to_fit_results(self,
                           dic,
@@ -1781,6 +2011,7 @@ def fudge_power_plot(data_sets, plot_path, T_lst= [295,1310,2350],
                         + '.{}'.format(format_im),
                         format=format_im, dpi=dpi)
         ax1.cla()
+        fig.clf()
     return
 
 
@@ -1941,6 +2172,7 @@ def fudge_power_plot_fit(data_sets, plot_path, T_lst= [295,1310,2350],
                         + '.{}'.format(format_im),
                         format=format_im, dpi=dpi)
         ax1.cla()
+        fig.clf()
 
 
         #plot cracking eff_bodge
@@ -1995,6 +2227,7 @@ def fudge_power_plot_fit(data_sets, plot_path, T_lst= [295,1310,2350],
                         + '.{}'.format(format_im),
                         format=format_im, dpi=dpi)
         ax1.cla()
+        fig.clf()
         
 
         #### HUGE HACK ###

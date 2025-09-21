@@ -25,10 +25,10 @@ font = {#'family' : 'normal','weight' : 'bold',
         }
 mpl.rc('font', **font)
 mpl.rcParams['figure.dpi'] = 400
-#From Pascal
-mpl.rcParams['text.usetex'] = True
-mpl.rcParams['mathtext.fontset'] = 'cm'
-mpl.rcParams['font.family'] = 'cmu serif'
+#From Pascal #NEEDED FOR SOME PLOTS, Detrimental to others
+# mpl.rcParams['text.usetex'] = True
+# mpl.rcParams['mathtext.fontset'] = 'cm'
+# mpl.rcParams['font.family'] = 'cmu serif'
 
 
 # make a class for fitting l_eff Tschersich model to beam shape
